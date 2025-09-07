@@ -1,0 +1,569 @@
+# Gujarati translations for PROJECT.
+# Copyright (C) 2025 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2025-09-07 19:11+0530\n"
+"PO-Revision-Date: 2025-09-07 19:14+0530\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: gu\n"
+"Language-Team: gu <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.9.1\n"
+
+#: fasal_ai_env/Lib/site-packages/click/_termui_impl.py:556
+#: fasal_ai_env_311/Lib/site-packages/click/_termui_impl.py:600
+msgid "{editor}: Editing failed"
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/_termui_impl.py:560
+#: fasal_ai_env_311/Lib/site-packages/click/_termui_impl.py:604
+msgid "{editor}: Editing failed: {e}"
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/core.py:1124
+#: fasal_ai_env_311/Lib/site-packages/click/core.py:1405
+msgid "Aborted!"
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/core.py:1349
+#: fasal_ai_env/Lib/site-packages/click/core.py:1379
+msgid "(Deprecated) {text}"
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/core.py:1396
+#: fasal_ai_env_311/Lib/site-packages/click/core.py:1140
+msgid "Options"
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/core.py:1424
+#: fasal_ai_env_311/Lib/site-packages/click/core.py:1204
+msgid "Got unexpected extra argument ({args})"
+msgid_plural "Got unexpected extra arguments ({args})"
+msgstr[0] ""
+msgstr[1] ""
+
+#: fasal_ai_env/Lib/site-packages/click/core.py:1437
+msgid "DeprecationWarning: The command {name!r} is deprecated."
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/core.py:1645
+#: fasal_ai_env_311/Lib/site-packages/click/core.py:1779
+msgid "Commands"
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/core.py:1677
+#: fasal_ai_env_311/Lib/site-packages/click/core.py:1810
+msgid "Missing command."
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/core.py:1755
+#: fasal_ai_env_311/Lib/site-packages/click/core.py:1888
+msgid "No such command {name!r}."
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/core.py:2313
+#: fasal_ai_env_311/Lib/site-packages/click/core.py:2303
+msgid "Value must be an iterable."
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/core.py:2336
+#: fasal_ai_env_311/Lib/site-packages/click/core.py:2326
+msgid "Takes {nargs} values but 1 was given."
+msgid_plural "Takes {nargs} values but {len} were given."
+msgstr[0] ""
+msgstr[1] ""
+
+#: fasal_ai_env/Lib/site-packages/click/core.py:2783
+#: fasal_ai_env_311/Lib/site-packages/click/core.py:2807
+msgid "env var: {var}"
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/core.py:2813
+#: fasal_ai_env_311/Lib/site-packages/click/core.py:2870
+msgid "(dynamic)"
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/core.py:2828
+#: fasal_ai_env_311/Lib/site-packages/click/core.py:2810
+msgid "default: {default}"
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/core.py:2841
+#: fasal_ai_env_311/Lib/site-packages/click/core.py:2814
+msgid "required"
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/decorators.py:457
+#: fasal_ai_env_311/Lib/site-packages/click/decorators.py:465
+#, python-format
+msgid "%(prog)s, version %(version)s"
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/decorators.py:520
+#: fasal_ai_env_311/Lib/site-packages/click/decorators.py:522
+msgid "Show the version and exit."
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/decorators.py:541
+#: fasal_ai_env_311/Lib/site-packages/click/decorators.py:548
+msgid "Show this message and exit."
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/exceptions.py:49
+#: fasal_ai_env/Lib/site-packages/click/exceptions.py:88
+#: fasal_ai_env_311/Lib/site-packages/click/exceptions.py:50
+#: fasal_ai_env_311/Lib/site-packages/click/exceptions.py:89
+msgid "Error: {message}"
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/exceptions.py:80
+#: fasal_ai_env_311/Lib/site-packages/click/exceptions.py:81
+msgid "Try '{command} {option}' for help."
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/exceptions.py:129
+#: fasal_ai_env_311/Lib/site-packages/click/exceptions.py:130
+msgid "Invalid value: {message}"
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/exceptions.py:131
+#: fasal_ai_env_311/Lib/site-packages/click/exceptions.py:132
+msgid "Invalid value for {param_hint}: {message}"
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/exceptions.py:187
+#: fasal_ai_env_311/Lib/site-packages/click/exceptions.py:190
+msgid "Missing argument"
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/exceptions.py:189
+#: fasal_ai_env_311/Lib/site-packages/click/exceptions.py:192
+msgid "Missing option"
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/exceptions.py:191
+#: fasal_ai_env_311/Lib/site-packages/click/exceptions.py:194
+msgid "Missing parameter"
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/exceptions.py:193
+#: fasal_ai_env_311/Lib/site-packages/click/exceptions.py:196
+msgid "Missing {param_type}"
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/exceptions.py:200
+#: fasal_ai_env_311/Lib/site-packages/click/exceptions.py:203
+msgid "Missing parameter: {param_name}"
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/exceptions.py:220
+#: fasal_ai_env_311/Lib/site-packages/click/exceptions.py:223
+msgid "No such option: {name}"
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/exceptions.py:234
+#: fasal_ai_env_311/Lib/site-packages/click/exceptions.py:237
+msgid "Did you mean {possibility}?"
+msgid_plural "(Possible options: {possibilities})"
+msgstr[0] ""
+msgstr[1] ""
+
+#: fasal_ai_env/Lib/site-packages/click/exceptions.py:270
+#: fasal_ai_env_311/Lib/site-packages/click/exceptions.py:282
+msgid "unknown error"
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/exceptions.py:277
+#: fasal_ai_env_311/Lib/site-packages/click/exceptions.py:289
+msgid "Could not open file {filename!r}: {message}"
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/parser.py:233
+#: fasal_ai_env_311/Lib/site-packages/click/parser.py:200
+msgid "Argument {name!r} takes {nargs} values."
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/parser.py:415
+#: fasal_ai_env_311/Lib/site-packages/click/parser.py:383
+msgid "Option {name!r} does not take a value."
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/parser.py:475
+#: fasal_ai_env_311/Lib/site-packages/click/parser.py:443
+msgid "Option {name!r} requires an argument."
+msgid_plural "Option {name!r} requires {nargs} arguments."
+msgstr[0] ""
+msgstr[1] ""
+
+#: fasal_ai_env/Lib/site-packages/click/shell_completion.py:325
+#: fasal_ai_env_311/Lib/site-packages/click/shell_completion.py:325
+msgid "Shell completion is not supported for Bash versions older than 4.4."
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/shell_completion.py:333
+#: fasal_ai_env_311/Lib/site-packages/click/shell_completion.py:333
+msgid "Couldn't detect Bash version, shell completion is not supported."
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/termui.py:158
+#: fasal_ai_env_311/Lib/site-packages/click/termui.py:162
+msgid "Repeat for confirmation"
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/termui.py:174
+#: fasal_ai_env_311/Lib/site-packages/click/termui.py:178
+msgid "Error: The value you entered was invalid."
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/termui.py:176
+#: fasal_ai_env_311/Lib/site-packages/click/termui.py:180
+msgid "Error: {e.message}"
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/termui.py:187
+#: fasal_ai_env_311/Lib/site-packages/click/termui.py:191
+msgid "Error: The two entered values do not match."
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/termui.py:243
+#: fasal_ai_env_311/Lib/site-packages/click/termui.py:247
+msgid "Error: invalid input"
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/termui.py:773
+#: fasal_ai_env_311/Lib/site-packages/click/termui.py:866
+msgid "Press any key to continue..."
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/types.py:267
+#: fasal_ai_env_311/Lib/site-packages/click/types.py:332
+msgid ""
+"Choose from:\n"
+"\t{choices}"
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/types.py:301
+#: fasal_ai_env_311/Lib/site-packages/click/types.py:371
+msgid "{value!r} is not {choice}."
+msgid_plural "{value!r} is not one of {choices}."
+msgstr[0] ""
+msgstr[1] ""
+
+#: fasal_ai_env/Lib/site-packages/click/types.py:395
+#: fasal_ai_env_311/Lib/site-packages/click/types.py:462
+msgid "{value!r} does not match the format {format}."
+msgid_plural "{value!r} does not match the formats {formats}."
+msgstr[0] ""
+msgstr[1] ""
+
+#: fasal_ai_env/Lib/site-packages/click/types.py:415
+#: fasal_ai_env_311/Lib/site-packages/click/types.py:482
+msgid "{value!r} is not a valid {number_type}."
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/types.py:471
+#: fasal_ai_env_311/Lib/site-packages/click/types.py:538
+msgid "{value} is not in the range {range}."
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/types.py:612
+#: fasal_ai_env_311/Lib/site-packages/click/types.py:679
+msgid "{value!r} is not a valid boolean."
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/types.py:636
+#: fasal_ai_env_311/Lib/site-packages/click/types.py:703
+msgid "{value!r} is not a valid UUID."
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/types.py:826
+#: fasal_ai_env_311/Lib/site-packages/click/types.py:893
+msgid "file"
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/types.py:828
+#: fasal_ai_env_311/Lib/site-packages/click/types.py:895
+msgid "directory"
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/types.py:830
+#: fasal_ai_env_311/Lib/site-packages/click/types.py:897
+msgid "path"
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/types.py:881
+#: fasal_ai_env_311/Lib/site-packages/click/types.py:944
+msgid "{name} {filename!r} does not exist."
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/types.py:890
+#: fasal_ai_env_311/Lib/site-packages/click/types.py:953
+msgid "{name} {filename!r} is a file."
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/types.py:898
+#: fasal_ai_env_311/Lib/site-packages/click/types.py:961
+msgid "{name} {filename!r} is a directory."
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/types.py:907
+#: fasal_ai_env_311/Lib/site-packages/click/types.py:970
+msgid "{name} {filename!r} is not readable."
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/types.py:916
+#: fasal_ai_env_311/Lib/site-packages/click/types.py:979
+msgid "{name} {filename!r} is not writable."
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/types.py:925
+#: fasal_ai_env_311/Lib/site-packages/click/types.py:988
+msgid "{name} {filename!r} is not executable."
+msgstr ""
+
+#: fasal_ai_env/Lib/site-packages/click/types.py:991
+#: fasal_ai_env_311/Lib/site-packages/click/types.py:1054
+msgid "{len_type} values are required, but {len_value} was given."
+msgid_plural "{len_type} values are required, but {len_value} were given."
+msgstr[0] ""
+msgstr[1] ""
+
+#: fasal_ai_env_311/Lib/site-packages/click/core.py:1084
+#: fasal_ai_env_311/Lib/site-packages/click/core.py:1121
+msgid "{text} {deprecated_message}"
+msgstr ""
+
+#: fasal_ai_env_311/Lib/site-packages/click/core.py:1220
+msgid "DeprecationWarning: The command {name!r} is deprecated.{extra_message}"
+msgstr ""
+
+#: fasal_ai_env_311/Lib/site-packages/click/core.py:2403
+msgid ""
+"DeprecationWarning: The {param_type} {name!r} is "
+"deprecated.{extra_message}"
+msgstr ""
+
+#: templates/index.html:7
+msgid "Fasal AI - AI Crop Recommendation System"
+msgstr "ફસલ AI - AI પાક ભલામણ સિસ્ટમ"
+
+#: templates/index.html:17
+msgid "Listen"
+msgstr "સાંભળો"
+
+#: templates/index.html:27
+msgid "FasalAI"
+msgstr "ફસલ AI"
+
+#: templates/index.html:28
+msgid "Smart Crop Recommendation System"
+msgstr "સ્માર્ટ પાક ભલામણ સિસ્ટમ"
+
+#: templates/index.html:29
+msgid "Smart India Hackathon 2025 - Revolutionizing Agriculture with Artificial Intelligence"
+msgstr "સ્માર્ટ ઇન્ડિયા હેકાથોન 2025 - કૃત્રિમ બુદ્ધિ વડે કૃષિમાં ક્રાંતિ"
+
+#: templates/index.html:30
+msgid "Get personalized crop recommendations based on soil nutrients, climate conditions, and advanced machine learning algorithms. Make informed farming decisions with 98.86% accuracy."
+msgstr "જમીનના પોષક તત્વો, આબોહવાની પરિસ્થિતિઓ અને અદ્યતન મશીન લર્નિંગ અલ્ગોરિધમ્સના આધારે વ્યક્તિગત પાકની ભલામણો મેળવો. 98.86% ચોકસાઈ સાથે ખેતીના માહિતગાર નિર્ણયો લો."
+
+#: templates/index.html:33
+msgid "Start Analysis"
+msgstr "વિશ્લેષણ શરૂ કરો"
+
+#: templates/index.html:40
+msgid "98.86%"
+msgstr "૯૮.૮૬%"
+
+#: templates/index.html:41
+msgid "AI Accuracy"
+msgstr "AI ચોકસાઈ"
+
+#: templates/index.html:45
+msgid "22+"
+msgstr "૨૨+"
+
+#: templates/index.html:46
+msgid "Crop Types"
+msgstr "પાકના પ્રકાર"
+
+#: templates/index.html:50
+msgid "Parameters"
+msgstr "માપદંડો"
+
+#: templates/index.html:60
+msgid "Soil & Climate Analysis"
+msgstr "જમીન અને આબોહવા વિશ્લેષણ"
+
+#: templates/index.html:61
+msgid "Adjust the parameters below to get personalized crop recommendations"
+msgstr "વ્યક્તિગત પાકની ભલામણો મેળવવા માટે નીચેના માપદંડોને સમાયોજિત કરો"
+
+#: templates/index.html:68
+msgid "Nitrogen"
+msgstr "નાઇટ્રોજન"
+
+#: templates/index.html:71
+msgid "Essential for vegetative growth and chlorophyll formation"
+msgstr "વાનસ્પતિક વૃદ્ધિ અને ક્લોરોફિલ નિર્માણ માટે જરૂરી"
+
+#: templates/index.html:83
+msgid "Phosphorus"
+msgstr "ફોસ્ફરસ"
+
+#: templates/index.html:86
+msgid "Important for root development and flowering"
+msgstr "મૂળના વિકાસ અને ફૂલો માટે મહત્વપૂર્ણ"
+
+#: templates/index.html:98
+msgid "Potassium"
+msgstr "પોટેશિયમ"
+
+#: templates/index.html:101
+msgid "Enhances disease resistance and fruit quality"
+msgstr "રોગ પ્રતિકારક શક્તિ અને ફળની ગુણવત્તામાં વધારો કરે છે"
+
+#: templates/index.html:112
+msgid "Temperature"
+msgstr "તાપમાન"
+
+#: templates/index.html:115
+msgid "Average growing season temperature"
+msgstr "સરેરાશ વધતી મોસમનું તાપમાન"
+
+#: templates/index.html:127
+msgid "Humidity"
+msgstr "ભેજ"
+
+#: templates/index.html:130
+msgid "Relative humidity levels"
+msgstr "સાપેક્ષ ભેજનું સ્તર"
+
+#: templates/index.html:141
+msgid "pH Level"
+msgstr "pH સ્તર"
+
+#: templates/index.html:144
+msgid "Soil acidity/alkalinity level"
+msgstr "જમીનની એસિડિટી/આલ્કલાઇનિટીનું સ્તર"
+
+#: templates/index.html:156
+msgid "Rainfall"
+msgstr "વરસાદ"
+
+#: templates/index.html:159
+msgid "Annual precipitation"
+msgstr "વાર્ષિક વરસાદ"
+
+#: templates/index.html:173
+msgid "AI Recommendations"
+msgstr "AI ભલામણો"
+
+#: templates/index.html:180
+msgid "Best Crop Recommendation"
+msgstr "શ્રેષ્ઠ પાકની ભલામણ"
+
+#: templates/index.html:182
+msgid "Confidence"
+msgstr "સંભાવના"
+
+#: templates/index.html:204
+msgid "Growing Tips"
+msgstr "વાવેતર માટેની ટિપ્સ"
+
+#: templates/index.html:215
+msgid "Alternative Recommendations"
+msgstr "વૈકલ્પિક ભલામણો"
+
+#: templates/index.html:231
+msgid "Agricultural Knowledge Center"
+msgstr "કૃષિ જ્ઞાન કેન્દ્ર"
+
+#: templates/index.html:237
+msgid "How Fasal AI Works"
+msgstr "ફસલ AI કેવી રીતે કામ કરે છે"
+
+#: templates/index.html:238
+msgid "Our machine learning model analyzes soil nutrients (N, P, K), climate conditions (temperature, humidity, rainfall), and pH levels to recommend the most suitable crops with 98.86% accuracy."
+msgstr "અમારું મશીન લર્નિંગ મોડેલ 98.86% ચોકસાઈ સાથે સૌથી યોગ્ય પાકોની ભલામણ કરવા માટે જમીનના પોષક તત્વો (N, P, K), આબોહવાની પરિસ્થિતિઓ (તાપમાન, ભેજ, વરસાદ), અને pH સ્તરનું વિશ્લેષણ કરે છે."
+
+#: templates/index.html:248
+msgid "Importance of Soil Testing"
+msgstr "જમીન પરીક્ષણનું મહત્વ"
+
+#: templates/index.html:249
+msgid "Regular soil testing helps determine nutrient availability, pH levels, and soil health. Understanding your soil composition is crucial for optimal crop selection and yield maximization."
+msgstr "નિયમિત જમીન પરીક્ષણ પોષક તત્વોની ઉપલબ્ધતા, pH સ્તર, અને જમીનના સ્વાસ્થ્યને નિર્ધારિત કરવામાં મદદ કરે છે. શ્રેષ્ઠ પાકની પસંદગી અને ઉપજને મહત્તમ કરવા માટે તમારી જમીનની રચનાને સમજવી નિર્ણાયક છે."
+
+#: templates/index.html:259
+msgid "Sustainable Farming"
+msgstr "ટકાઉ ખેતી"
+
+#: templates/index.html:260
+msgid "Sustainable farming practices include crop rotation, organic matter incorporation, water conservation, and integrated pest management to maintain soil health and ecosystem balance."
+msgstr "ટકાઉ ખેતી પદ્ધતિઓમાં પાકની ફેરબદલી, કાર્બનિક પદાર્થોનો સમાવેશ, જળ સંરક્ષણ, અને જમીનના સ્વાસ્થ્ય અને ઇકોસિસ્ટમનું સંતુલન જાળવવા માટે સંકલિત જંતુ સંચાલનનો સમાવેશ થાય છે."
+
+#: templates/index.html:270
+msgid "NPK Nutrients Role"
+msgstr "NPK પોષક તત્વોની ભૂમિકા"
+
+#: templates/index.html:271
+msgid "Nitrogen:"
+msgstr "નાઇટ્રોજન:"
+
+#: templates/index.html:271
+msgid "Promotes leafy growth"
+msgstr "પાંદડાની વૃદ્ધિને પ્રોત્સાહન આપે છે"
+
+#: templates/index.html:271
+msgid "Phosphorus:"
+msgstr "ફોસ્ફરસ:"
+
+#: templates/index.html:271
+msgid "Enhances root development"
+msgstr "મૂળના વિકાસને વધારે છે"
+
+#: templates/index.html:272
+msgid "Potassium:"
+msgstr "પોટેશિયમ:"
+
+#: templates/index.html:272
+msgid "Improves disease resistance and fruit quality"
+msgstr "રોગ પ્રતિકારક શક્તિ અને ફળની ગુણવત્તામાં સુધારો કરે છે"
+
+#: templates/index.html:285
+msgid "Fasal AI"
+msgstr "ફસલ AI"
+
+#: templates/index.html:286
+msgid "Empowering farmers with AI-driven crop recommendations for sustainable agriculture."
+msgstr "ટકાઉ કૃષિ માટે AI-સંચાલિત પાકની ભલામણો સાથે ખેડૂતોને સશક્ત બનાવવા."
+
+#: templates/index.html:289
+msgid "Smart India Hackathon 2025"
+msgstr "સ્માર્ટ ઇન્ડિયા હેકાથોન 2025"
+
+#: templates/index.html:290
+msgid "Building innovative solutions for agricultural challenges using cutting-edge technology."
+msgstr "અત્યાધુનિક ટેકનોલોજીનો ઉપયોગ કરીને કૃષિના પડકારો માટે નવીન ઉકેલોનું નિર્માણ."
+
+#: templates/index.html:293
+msgid "Technology Stack"
+msgstr "ટેકનોલોજી સ્ટેક"
+
+#: templates/index.html:294
+msgid "Machine Learning • Agricultural Science • Web Technologies"
+msgstr "મશીન લર્નિંગ • કૃષિ વિજ્ઞાન • વેબ ટેકનોલોજીસ"
+
+#: templates/index.html:297
+msgid "&copy; 2025 Fasal AI - Smart Crop Recommendation System. Built for Smart India Hackathon."
+msgstr "&copy; 2025 ફસલ AI - સ્માર્ટ પાક ભલામણ સિસ્ટમ. સ્માર્ટ ઇન્ડિયા હેકાથોન માટે બનાવેલ."
+
