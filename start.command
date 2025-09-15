@@ -23,4 +23,4 @@ pybabel compile -d translations
 # Start the Flask server
 echo "--- Starting Fasal AI server ---"
 echo "Access the application at http://127.0.0.1:5000"
-python app.py
+python3 app.py
