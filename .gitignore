@@ -1,5 +1,7 @@
 # Virtual Environment
 fasal_ai_env_311/
+.env
+venv/
 
 # Python cache
 __pycache__/
