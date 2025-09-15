@@ -2,10 +2,13 @@
 fasal_ai_env_311/
 .env
 venv/
+env/
+.env.local
 
 # Python cache
 __pycache__/
 *.pyc
+*.pyo
 
 # IDE/Editor folders
 .vscode/

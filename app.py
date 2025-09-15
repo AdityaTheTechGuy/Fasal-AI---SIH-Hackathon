@@ -15,6 +15,11 @@ app.config['BABEL_TRANSLATION_DIRECTORIES'] = 'translations'
 app.secret_key = 'fasal-ai-secret-key'
 babel = Babel(app)
 
+# Use environment variables for production
+app.config['BABEL_DEFAULT_LOCALE'] = os.environ.get('BABEL_DEFAULT_LOCALE', 'en')
+app.config['BABEL_TRANSLATION_DIRECTORIES'] = os.environ.get('BABEL_TRANSLATION_DIRECTORIES', 'translations')
+app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'fallback-secret-key')
+
 LANGUAGES = {
     'en': 'English',
     'hi': 'हिंदी',
@@ -229,4 +234,4 @@ def api_predict():
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=port, debug=os.environ.get('FLASK_DEBUG', 'false').lower() == 'true')
