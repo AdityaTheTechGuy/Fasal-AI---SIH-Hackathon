@@ -23,12 +23,16 @@ echo "Installing dependencies from requirements.txt..."
 # Use python from venv to ensure we use the correct pip
 python3 -m pip install -r requirements.txt
 
+# FIX: Install setuptools to provide the 'distutils' module for Python 3.12+
+echo "Ensuring 'distutils' is available for pybabel..."
+python3 -m pip install --upgrade setuptools
+
 # Compile language translations
 echo "Compiling language files..."
 pybabel compile -d translations
 
 # Start the Flask server
 echo "--- Starting Fasal AI server ---"
-echo "Access the application at http://1227.0.0.1:5000"
+echo "Access the application at http://127.0.0.1:5000"
 python3 app.py
 
