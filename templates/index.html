@@ -11,7 +11,6 @@
 </head>
 
 <body>
-    <!-- Language Selector -->
     <div class="language-selector">
         <select id="language-select" onchange="window.location.href = '/change-lang/' + this.value;"
             aria-label="{{ _('Select Language') }}">
@@ -26,17 +25,16 @@
         </button>
     </div>
 
-    <!-- Hero Section -->
     <header class="hero">
         <div class="container">
             <div class="hero-content">
                 <div class="hero-text">
-                    <!-- FIX: Removed translation tag from the brand name -->
                     <h1><i class="fas fa-seedling"></i> FasalAI</h1>
                     <h2>{{ _('Smart Crop Recommendation System') }}</h2>
                     <p>{{ _('Smart India Hackathon 2025 - Revolutionizing Agriculture with Artificial Intelligence') }}
                     </p>
-                    <p class="hero-description">{{ _('Get personalized crop recommendations based on soil nutrients,
+                    <p class="hero-description" id="current-text">{{ _('Get personalized crop recommendations based on
+                        soil nutrients,
                         climate conditions, and advanced machine learning algorithms. Make informed farming decisions
                         with 98.86%% accuracy.') }}</p>
                     <button class="btn btn--primary" onclick="scrollToForm()">
@@ -66,165 +64,189 @@
         </div>
     </header>
 
-    <!-- Input Form Section (No changes here) -->
     <section class="input-section" id="input-form">
         <div class="container">
             <h2><i class="fas fa-sliders-h"></i>{{ _('Soil & Climate Analysis') }}</h2>
             <p class="section-description">{{ _('Adjust the parameters below to get personalized crop recommendations')
                 }}</p>
 
-            <div class="form-grid">
-                <div class="parameter-group">
-                    <div class="parameter-card">
-                        <div class="parameter-header">
-                            <i class="fas fa-flask"></i>
-                            <h3>{{ _('Nitrogen') }} </h3>
-                            <span class="parameter-unit">kg/ha</span>
+            <form method="POST" action="{{ url_for('predict') }}" id="crop-prediction-form">
+                <div class="form-grid">
+                    <div class="parameter-group">
+                        <div class="parameter-card">
+                            <div class="parameter-header">
+                                <i class="fas fa-flask"></i>
+                                <h3>{{ _('Nitrogen') }} </h3>
+                                <span class="parameter-unit">kg/ha</span>
+                            </div>
+                            <p class="parameter-description">{{ _('Essential for vegetative growth and chlorophyll
+                                formation') }}</p>
+                            <div class="input-group">
+                                <input type="range" id="nitrogen" name="nitrogen" min="0" max="200"
+                                    value="{{ input_values.nitrogen if input_values else 50 }}" class="slider">
+                                <input type="number" id="nitrogen-input" min="0" max="200"
+                                    value="{{ input_values.nitrogen if input_values else 50 }}" class="number-input">
+                            </div>
                         </div>
-                        <p class="parameter-description">{{ _('Essential for vegetative growth and chlorophyll
-                            formation') }}</p>
-                        <div class="input-group">
-                            <input type="range" id="nitrogen" min="0" max="200" value="50" class="slider">
-                            <input type="number" id="nitrogen-input" min="0" max="200" value="50" class="number-input">
+                    </div>
+                    <div class="parameter-group">
+                        <div class="parameter-card">
+                            <div class="parameter-header">
+                                <i class="fas fa-seedling"></i>
+                                <h3>{{ _('Phosphorus') }} (P)</h3>
+                                <span class="parameter-unit">kg/ha</span>
+                            </div>
+                            <p class="parameter-description">{{ _('Important for root development and flowering') }}</p>
+                            <div class="input-group">
+                                <input type="range" id="phosphorus" name="phosphorus" min="0" max="150"
+                                    value="{{ input_values.phosphorus if input_values else 30 }}" class="slider">
+                                <input type="number" id="phosphorus-input" min="0" max="150"
+                                    value="{{ input_values.phosphorus if input_values else 30 }}" class="number-input">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="parameter-group">
+                        <div class="parameter-card">
+                            <div class="parameter-header">
+                                <i class="fas fa-shield-alt"></i>
+                                <h3>{{ _('Potassium') }} (K)</h3>
+                                <span class="parameter-unit">kg/ha</span>
+                            </div>
+                            <p class="parameter-description">{{ _('Enhances disease resistance and fruit quality')}}</p>
+                            <div class="input-group">
+                                <input type="range" id="potassium" name="potassium" min="0" max="300"
+                                    value="{{ input_values.potassium if input_values else 40 }}" class="slider">
+                                <input type="number" id="potassium-input" min="0" max="300"
+                                    value="{{ input_values.potassium if input_values else 40 }}" class="number-input">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="parameter-group">
+                        <div class="parameter-card">
+                            <div class="parameter-header">
+                                <i class="fas fa-thermometer-half"></i>
+                                <h3>{{ _('Temperature')}}</h3>
+                                <span class="parameter-unit">°C</span>
+                            </div>
+                            <p class="parameter-description">{{ _('Average growing season temperature') }}</p>
+                            <div class="input-group">
+                                <input type="range" id="temperature" name="temperature" min="5" max="45"
+                                    value="{{ input_values.temperature if input_values else 25 }}" class="slider">
+                                <input type="number" id="temperature-input" min="5" max="45"
+                                    value="{{ input_values.temperature if input_values else 25 }}" class="number-input">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="parameter-group">
+                        <div class="parameter-card">
+                            <div class="parameter-header">
+                                <i class="fas fa-tint"></i>
+                                <h3>{{ _('Humidity') }}</h3>
+                                <span class="parameter-unit">%</span>
+                            </div>
+                            <p class="parameter-description">{{ _('Relative humidity levels') }}</p>
+                            <div class="input-group">
+                                <input type="range" id="humidity" name="humidity" min="10" max="100"
+                                    value="{{ input_values.humidity if input_values else 60 }}" class="slider">
+                                <input type="number" id="humidity-input" min="10" max="100"
+                                    value="{{ input_values.humidity if input_values else 60 }}" class="number-input">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="parameter-group">
+                        <div class="parameter-card">
+                            <div class="parameter-header">
+                                <i class="fas fa-balance-scale"></i>
+                                <h3>{{ _('pH Level') }}</h3>
+                                <span class="parameter-unit">pH</span>
+                            </div>
+                            <p class="parameter-description">{{ _('Soil acidity/alkalinity level') }}</p>
+                            <div class="input-group">
+                                <input type="range" id="ph" name="ph" min="3" max="10" step="0.1"
+                                    value="{{ input_values.ph if input_values else 6.5 }}" class="slider">
+                                <input type="number" id="ph-input" min="3" max="10" step="0.1"
+                                    value="{{ input_values.ph if input_values else 6.5 }}" class="number-input">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="parameter-group">
+                        <div class="parameter-card">
+                            <div class="parameter-header">
+                                <i class="fas fa-cloud-rain"></i>
+                                <h3>{{ _('Rainfall') }}</h3>
+                                <span class="parameter-unit">mm</span>
+                            </div>
+                            <p class="parameter-description">{{ _('Annual precipitation') }}</p>
+                            <div class="input-group">
+                                <input type="range" id="rainfall" name="rainfall" min="20" max="300"
+                                    value="{{ input_values.rainfall if input_values else 150 }}" class="slider">
+                                <input type="number" id="rainfall-input" min="20" max="300"
+                                    value="{{ input_values.rainfall if input_values else 150 }}" class="number-input">
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="parameter-group">
-                    <div class="parameter-card">
-                        <div class="parameter-header">
-                            <i class="fas fa-seedling"></i>
-                            <h3>{{ _('Phosphorus') }} (P)</h3>
-                            <span class="parameter-unit">kg/ha</span>
-                        </div>
-                        <p class="parameter-description">{{ _('Important for root development and flowering') }}</p>
-                        <div class="input-group">
-                            <input type="range" id="phosphorus" min="0" max="150" value="30" class="slider">
-                            <input type="number" id="phosphorus-input" min="0" max="150" value="30"
-                                class="number-input">
-                        </div>
-                    </div>
+                <div class="form-submit-section" style="text-align: center; margin-top: 2rem; padding: 1rem;">
+                    <button type="submit" class="btn btn--primary btn--lg">
+                        <i class="fas fa-seedling"></i> {{ _('Get Recommendation') }}
+                    </button>
+                    <p style="font-size: 0.875rem; color: var(--color-text-secondary); margin-top: 0.5rem;">
+                        {{ _('Click to analyze soil conditions and get AI-powered crop recommendations') }}
+                    </p>
                 </div>
-
-                <div class="parameter-group">
-                    <div class="parameter-card">
-                        <div class="parameter-header">
-                            <i class="fas fa-shield-alt"></i>
-                            <h3>{{ _('Potassium') }} (K)</h3>
-                            <span class="parameter-unit">kg/ha</span>
-                        </div>
-                        <p class="parameter-description">{{ _('Enhances disease resistance and fruit quality')}}</p>
-                        <div class="input-group">
-                            <input type="range" id="potassium" min="0" max="300" value="40" class="slider">
-                            <input type="number" id="potassium-input" min="0" max="300" value="40" class="number-input">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="parameter-group">
-                    <div class="parameter-card">
-                        <div class="parameter-header">
-                            <i class="fas fa-thermometer-half"></i>
-                            <h3>{{ _('Temperature')}}</h3>
-                            <span class="parameter-unit">°C</span>
-                        </div>
-                        <p class="parameter-description">{{ _('Average growing season temperature') }}</p>
-                        <div class="input-group">
-                            <input type="range" id="temperature" min="5" max="45" value="25" class="slider">
-                            <input type="number" id="temperature-input" min="5" max="45" value="25"
-                                class="number-input">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="parameter-group">
-                    <div class="parameter-card">
-                        <div class="parameter-header">
-                            <i class="fas fa-tint"></i>
-                            <h3>{{ _('Humidity') }}</h3>
-                            <span class="parameter-unit">%</span>
-                        </div>
-                        <p class="parameter-description">{{ _('Relative humidity levels') }}</p>
-                        <div class="input-group">
-                            <input type="range" id="humidity" min="10" max="100" value="60" class="slider">
-                            <input type="number" id="humidity-input" min="10" max="100" value="60" class="number-input">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="parameter-group">
-                    <div class="parameter-card">
-                        <div class="parameter-header">
-                            <i class="fas fa-balance-scale"></i>
-                            <h3>{{ _('pH Level') }}</h3>
-                            <span class="parameter-unit">pH</span>
-                        </div>
-                        <p class="parameter-description">{{ _('Soil acidity/alkalinity level') }}</p>
-                        <div class="input-group">
-                            <input type="range" id="ph" min="3" max="10" step="0.1" value="6.5" class="slider">
-                            <input type="number" id="ph-input" min="3" max="10" step="0.1" value="6.5"
-                                class="number-input">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="parameter-group">
-                    <div class="parameter-card">
-                        <div class="parameter-header">
-                            <i class="fas fa-cloud-rain"></i>
-                            <h3>{{ _('Rainfall') }}</h3>
-                            <span class="parameter-unit">mm</span>
-                        </div>
-                        <p class="parameter-description">{{ _('Annual precipitation') }}</p>
-                        <div class="input-group">
-                            <input type="range" id="rainfall" min="20" max="300" value="150" class="slider">
-                            <input type="number" id="rainfall-input" min="20" max="300" value="150"
-                                class="number-input">
-                        </div>
-                    </div>
-                </div>
-            </div>
+            </form>
         </div>
     </section>
 
-    <!-- Results Section (No changes here) -->
-    <section class="results-section" id="results">
+    {% if error %}
+    <section class="message-section" style="padding: 1rem 0; background-color: var(--color-bg-4);">
+        <div class="container">
+            <div class="alert alert--error"
+                style="background: rgba(var(--color-error-rgb), 0.1); border: 1px solid rgba(var(--color-error-rgb), 0.3); border-radius: var(--radius-base); padding: 1rem; color: var(--color-error);">
+                <i class="fas fa-exclamation-circle"></i>
+                <strong>{{ _('Error:') }}</strong> {{ error }}
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    <section class="results-section" id="results" style="display: none;">
         <div class="container">
             <h2><i class="fas fa-chart-bar"></i> {{ _('AI Recommendations') }}</h2>
 
             <div class="results-grid">
-                <!-- Primary Recommendation -->
                 <div class="primary-recommendation">
                     <div class="card">
                         <div class="card__body">
                             <div class="primary-crop-header">
                                 <h3>{{ _('Best Crop Recommendation') }}</h3>
                                 <div class="confidence-badge">
-                                    <span id="primary-confidence">95%</span> {{ _('Confidence') }}
+                                    <span id="primary-confidence">0%</span> {{ _('Confidence') }}
                                 </div>
                             </div>
                             <div class="primary-crop-content">
-                                <div class="crop-icon" id="primary-crop-icon">🌾</div>
+                                <div class="crop-icon" id="primary-crop-icon">🌱</div>
                                 <div class="crop-details">
-                                    <h2 id="primary-crop-name">Rice</h2>
+                                    <h2 id="primary-crop-name">{{ _('Select parameters to see recommendations') }}</h2>
                                     <div class="crop-info-grid">
                                         <div class="info-item">
                                             <i class="fas fa-calendar"></i>
-                                            <span id="primary-crop-season">Kharif (June-November)</span>
+                                            <span id="primary-crop-season">{{ _('Adjust sliders to see data') }}</span>
                                         </div>
                                         <div class="info-item">
                                             <i class="fas fa-tint"></i>
-                                            <span id="primary-crop-water">High (1200-2500mm)</span>
+                                            <span id="primary-crop-water">{{ _('Adjust sliders to see data') }}</span>
                                         </div>
                                         <div class="info-item">
                                             <i class="fas fa-mountain"></i>
-                                            <span id="primary-crop-soil">Clay loam, well-drained</span>
+                                            <span id="primary-crop-soil">{{ _('Adjust sliders to see data') }}</span>
                                         </div>
                                     </div>
                                     <div class="crop-tips">
                                         <h4><i class="fas fa-lightbulb"></i> {{ _('Growing Tips') }}</h4>
-                                        <p id="primary-crop-tips">Ensure proper water management and pest control for
-                                            diseases like blast and brown spot.</p>
+                                        <p id="primary-crop-tips">{{ _('Adjust the parameters above to get personalized
+                                            growing tips for your recommended crop.') }}</p>
                                     </div>
                                 </div>
                             </div>
@@ -232,15 +254,30 @@
                     </div>
                 </div>
 
-                <!-- Alternative Recommendations -->
                 <div class="alternative-recommendations">
                     <h3>{{ _('Alternative Recommendations') }}</h3>
                     <div id="alternative-crops" class="alternative-grid">
-                        <!-- Alternative crops will be populated by JavaScript -->
+                        <div class="alternative-crop">
+                            <div class="alternative-crop-icon">🌽</div>
+                            <h4>{{ _('Maize') }}</h4>
+                            <div class="alternative-confidence confidence-medium">75% {{ _('Match') }}</div>
+                            <p>{{ _('Kharif/Rabi season crop') }}</p>
+                        </div>
+                        <div class="alternative-crop">
+                            <div class="alternative-crop-icon">🫘</div>
+                            <h4>{{ _('Chickpea') }}</h4>
+                            <div class="alternative-confidence confidence-medium">68% {{ _('Match') }}</div>
+                            <p>{{ _('Rabi season crop') }}</p>
+                        </div>
+                        <div class="alternative-crop">
+                            <div class="alternative-crop-icon">🌱</div>
+                            <h4>{{ _('Cotton') }}</h4>
+                            <div class="alternative-confidence confidence-low">52% {{ _('Match') }}</div>
+                            <p>{{ _('Kharif season crop') }}</p>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Suitability Chart -->
                 <div class="chart-container" style="position: relative; height: 300px;">
                     <canvas id="suitabilityChart"></canvas>
                 </div>
@@ -248,57 +285,37 @@
         </div>
     </section>
 
-    <!-- Educational Section (No changes here) -->
     <section class="education-section">
         <div class="container">
-            <h2><i class="fas fa-graduation-cap"></i> {{ _('Agricultural Knowledge Center') }}</h2>
-
+            <h2><i class="fas fa-graduation-cap"></i> {{ _('Agricultural Knowledge') }}</h2>
             <div class="education-grid">
                 <div class="education-card">
                     <div class="card">
                         <div class="card__body">
-                            <i class="fas fa-cogs"></i>
-                            <h3>{{ _('How Fasal AI Works') }}</h3>
-                            <p>{{ _('Our machine learning model analyzes soil nutrients (N, P, K), climate conditions
-                                (temperature, humidity, rainfall), and pH levels to recommend the most suitable crops
-                                with 98.86% accuracy.') }}</p>
+                            <i class="fas fa-flask"></i>
+                            <h3>{{ _('Soil Nutrients') }}</h3>
+                            <p>{{ _('Learn about the essential nutrients required for optimal crop growth and how to
+                                maintain soil health.') }}</p>
                         </div>
                     </div>
                 </div>
-
                 <div class="education-card">
                     <div class="card">
                         <div class="card__body">
-                            <i class="fas fa-vial"></i>
-                            <h3>{{ _('Importance of Soil Testing') }}</h3>
-                            <p>{{ _('Regular soil testing helps determine nutrient availability, pH levels, and soil
-                                health. Understanding your soil composition is crucial for optimal crop selection and
-                                yield maximization.') }}</p>
+                            <i class="fas fa-cloud-sun"></i>
+                            <h3>{{ _('Climate Impact') }}</h3>
+                            <p>{{ _('Understand how temperature, humidity, and rainfall affect different crops and
+                                farming practices.') }}</p>
                         </div>
                     </div>
                 </div>
-
-                <div class="education-card">
-                    <div class="card">
-                        <div class="card__body">
-                            <i class="fas fa-leaf"></i>
-                            <h3>{{ _('Sustainable Farming') }}</h3>
-                            <p>{{ _('Sustainable farming practices include crop rotation, organic matter incorporation,
-                                water conservation, and integrated pest management to maintain soil health and ecosystem
-                                balance.') }}</p>
-                        </div>
-                    </div>
-                </div>
-
                 <div class="education-card">
                     <div class="card">
                         <div class="card__body">
                             <i class="fas fa-seedling"></i>
-                            <h3>{{ _('NPK Nutrients Role') }}</h3>
-                            <p><strong>{{ _('Nitrogen:') }}</strong> {{ _('Promotes leafy growth') }}<br><strong>{{
-                                    _('Phosphorus:') }}</strong> {{ _('Enhances root development') }}<br><strong>{{
-                                    _('Potassium:') }}</strong> {{ _('Improves disease resistance and fruit quality') }}
-                            </p>
+                            <h3>{{ _('Crop Rotation') }}</h3>
+                            <p>{{ _('Discover the benefits of crop rotation and how it improves soil fertility and
+                                reduces pests.') }}</p>
                         </div>
                     </div>
                 </div>
@@ -306,30 +323,31 @@
         </div>
     </section>
 
-    <!-- Footer -->
     <footer class="footer">
         <div class="container">
             <div class="footer-content">
                 <div class="footer-section">
-                    <!-- FIX: Removed translation tag from the brand name -->
-                    <h3><i class="fas fa-seedling"></i> Fasal AI</h3>
-                    <p>{{ _('Empowering farmers with AI-driven crop recommendations for sustainable agriculture.') }}
-                    </p>
+                    <h3><i class="fas fa-seedling"></i> FasalAI</h3>
+                    <p>{{ _('Revolutionizing agriculture with AI-powered crop recommendations for better farming
+                        decisions.') }}</p>
                 </div>
                 <div class="footer-section">
-                    <h4>{{ _('Smart India Hackathon 2025') }}</h4>
-                    <p>{{ _('Building innovative solutions for agricultural challenges using cutting-edge technology.')
-                        }}</p>
+                    <h4>{{ _('Quick Links') }}</h4>
+                    <ul>
+                        <li><a href="#input-form">{{ _('Crop Analysis') }}</a></li>
+                        <li><a href="#results">{{ _('Recommendations') }}</a></li>
+                        <li><a href="#">{{ _('About Us') }}</a></li>
+                        <li><a href="#">{{ _('Contact') }}</a></li>
+                    </ul>
                 </div>
                 <div class="footer-section">
-                    <h4>{{ _('Technology Stack') }}</h4>
-                    <p>{{ _('Machine Learning • Agricultural Science • Web Technologies') }}</p>
+                    <h4>{{ _('Supported Crops') }}</h4>
+                    <p>{{ _('Rice, Maize, Cotton, Apple, Banana, Coffee, and 16+ more crops with detailed growing
+                        information.') }}</p>
                 </div>
             </div>
             <div class="footer-bottom">
-                <!-- FIX: Separated brand name from the translatable text -->
-                <p>&copy; 2025 Fasal AI - {{ _('Smart Crop Recommendation System. Built for Smart India Hackathon.') }}
-                </p>
+                <p>&copy; 2025 FasalAI - {{ _('Smart India Hackathon Project. All rights reserved.') }}</p>
             </div>
         </div>
     </footer>
