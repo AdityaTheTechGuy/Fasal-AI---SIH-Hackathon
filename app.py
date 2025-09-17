@@ -1,15 +1,28 @@
 import os
 import pickle
 import numpy as np
+import pandas as pd
 import io
 from flask import Flask, request, render_template, jsonify, session, redirect, url_for, send_file
 from flask_babel import Babel, get_locale
 from gtts import gTTS
+from data_aggregator import get_live_data, validate_coordinates
 
 app = Flask(__name__)
 app.config['BABEL_DEFAULT_LOCALE'] = os.environ.get('BABEL_DEFAULT_LOCALE', 'en')
 app.config['BABEL_TRANSLATION_DIRECTORIES'] = 'translations'
-app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'fallback-secret-key')
+
+from dotenv import load_dotenv, find_dotenv
+load_dotenv(find_dotenv())
+
+# Use proper secret key handling
+app.secret_key = os.environ.get('FLASK_SECRET_KEY')
+if not app.secret_key:
+    if os.environ.get('FLASK_ENV') == 'development':
+        app.secret_key = 'development-key-only'
+    else:
+        raise ValueError("No FLASK_SECRET_KEY set for production environment")
+
 babel = Babel(app)
 
 LANGUAGES = {'en': 'English', 'hi': 'हिंदी', 'mr': 'मराठी', 'gu': 'ગુજરાતી', 'bn': 'বাংলা'}
@@ -37,12 +50,20 @@ def text_to_speech(text):
     mp3_fp.seek(0)
     return send_file(mp3_fp, mimetype='audio/mpeg')
 
+# Expected feature order for model prediction
+EXPECTED_FEATURES = ['N', 'P', 'K', 'temperature', 'humidity', 'ph', 'rainfall']
+
+# Load model and label encoder only once when application starts
 try:
     with open('crop_recommendation_model.pkl', 'rb') as f:
         model = pickle.load(f)
+    
+    # Verify it's a scikit-learn model
+    if not hasattr(model, 'predict_proba'):
+        raise ValueError("Loaded model doesn't have predict_proba method - may not be a scikit-learn model")
         
-        print(f"✅ Loaded Model Type: {type(model)}")
-        
+    print(f"✅ Loaded Model Type: {type(model).__name__}")
+    
     with open('label_encoder.pkl', 'rb') as f:
         label_encoder = pickle.load(f)
     print("✓ Model and label encoder loaded successfully!")
@@ -211,6 +232,72 @@ def api_predict():
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 400
+
+# NEW: Live prediction endpoint using geolocation and real-time data
+@app.route('/predict_live', methods=['POST'])
+def predict_live():
+    try:
+        if model is None or label_encoder is None:
+            return jsonify({'status': 'error', 'message': 'Model not loaded. Please check server configuration.'}), 500
+        
+        # Get coordinates from request
+        data = request.get_json()
+        if not data or 'latitude' not in data or 'longitude' not in data:
+            return jsonify({'status': 'error', 'message': 'Latitude and longitude are required.'}), 400
+        
+        latitude = float(data['latitude'])
+        longitude = float(data['longitude'])
+        
+        # Validate coordinates
+        if not validate_coordinates(latitude, longitude):
+            return jsonify({'status': 'error', 'message': 'Invalid coordinates provided.'}), 400
+        
+        # Fetch live data using the data aggregator
+        live_data = get_live_data(latitude, longitude)
+        
+        if live_data is None:
+            return jsonify({
+                'status': 'error', 
+                'message': 'Could not retrieve live data for the location. Please try manual input.'
+            }), 503  # Service unavailable
+        
+        # Prepare data for model prediction (must match training feature order)
+        features_df = pd.DataFrame([[
+            live_data.get('N', 0),
+            live_data.get('P', 0),
+            live_data.get('K', 0),
+            live_data.get('temperature', 0),
+            live_data.get('humidity', 0),
+            live_data.get('ph', 0),
+            live_data.get('rainfall', 0)
+        ]], columns=EXPECTED_FEATURES)
+        
+        # Make prediction
+        prediction = model.predict(features_df)
+        crop_name = label_encoder.inverse_transform(prediction)[0]
+        
+        # Get prediction probabilities
+        probabilities = model.predict_proba(features_df)[0]
+        confidence = max(probabilities) * 100
+        
+        # Get crop information
+        crop_info = CROP_INFO.get(crop_name, {})
+        
+        return jsonify({
+            'status': 'success',
+            'crop': crop_name,
+            'confidence': round(confidence, 2),
+            'crop_info': crop_info,
+            'location_data': {
+                'latitude': latitude,
+                'longitude': longitude
+            },
+            'environment_data': live_data
+        })
+        
+    except Exception as e:
+        print(f"Error in predict_live: {str(e)}")
+        return jsonify({'status': 'error', 'message': f'An error occurred: {str(e)}'}), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))

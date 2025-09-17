@@ -34,6 +34,7 @@ document.addEventListener('DOMContentLoaded', function () {
     initializeSliders();
     setupEventListeners();
     initializeRealTimePredictions();
+    setupLivePrediction();
 });
 
 // Initialize all sliders and input synchronization
@@ -76,6 +77,138 @@ function setupEventListeners() {
             submitForm();
         });
     }
+}
+
+// Setup live prediction functionality
+function setupLivePrediction() {
+    const livePredictionBtn = document.getElementById('getLocationBtn');
+    if (livePredictionBtn) {
+        livePredictionBtn.addEventListener('click', handleLivePrediction);
+    }
+}
+
+// Handle live prediction using geolocation
+async function handleLivePrediction() {
+    const resultDiv = document.getElementById('live-result');
+    if (!resultDiv) return;
+
+    // Show loading state
+    resultDiv.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> Fetching your location...</div>';
+    resultDiv.className = 'live-result active';
+
+    try {
+        // Get user's location
+        const position = await getCurrentPosition();
+        const { latitude, longitude } = position.coords;
+
+        // Update UI
+        resultDiv.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> Location found! Analyzing soil and climate data...</div>';
+
+        // Make prediction request
+        const response = await fetch('/predict_live', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ latitude, longitude })
+        });
+
+        const data = await response.json();
+
+        if (data.status === 'success') {
+            // Display success result
+            const crop = cropDatabase[data.crop] || {
+                name: data.crop,
+                season: 'Season information not available',
+                water_req: 'Water requirement not available',
+                soil_type: 'Soil type not available',
+                tips: 'Growing tips not available',
+                icon: '🌱'
+            };
+
+            resultDiv.innerHTML = `
+                <div class="live-prediction-success">
+                    <div class="success-header">
+                        <h3><i class="fas fa-check-circle"></i> Live Recommendation</h3>
+                        <span class="confidence-badge">${Math.round(data.confidence)}% Confidence</span>
+                    </div>
+                    <div class="crop-result">
+                        <div class="crop-icon-large">${crop.icon}</div>
+                        <div class="crop-details">
+                            <h2>${crop.name}</h2>
+                            <div class="crop-info">
+                                <p><strong>Season:</strong> ${crop.season}</p>
+                                <p><strong>Water Requirement:</strong> ${crop.water_req}</p>
+                                <p><strong>Soil Type:</strong> ${crop.soil_type}</p>
+                            </div>
+                            <div class="crop-tips">
+                                <h4><i class="fas fa-lightbulb"></i> Growing Tips</h4>
+                                <p>${crop.tips}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="location-info">
+                        <p><i class="fas fa-map-marker-alt"></i> Location: ${latitude.toFixed(4)}°N, ${longitude.toFixed(4)}°E</p>
+                        <p><i class="fas fa-database"></i> Data Sources: OpenWeatherMap + SoilGrids API</p>
+                    </div>
+                </div>
+            `;
+        } else {
+            // Display error
+            resultDiv.innerHTML = `
+                <div class="live-prediction-error">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h3>Error</h3>
+                    <p>${data.message || 'An error occurred while processing your request.'}</p>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Live prediction error:', error);
+        resultDiv.innerHTML = `
+            <div class="live-prediction-error">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h3>Error</h3>
+                <p>${error.message || 'An error occurred while processing your request.'}</p>
+            </div>
+        `;
+    }
+}
+
+// Get current position with Promise
+function getCurrentPosition() {
+    return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+            reject(new Error('Geolocation is not supported by your browser.'));
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            resolve, 
+            (error) => {
+                let errorMessage;
+                switch(error.code) {
+                    case error.PERMISSION_DENIED:
+                        errorMessage = 'Location access was denied. Please enable location permissions.';
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        errorMessage = 'Location information is unavailable.';
+                        break;
+                    case error.TIMEOUT:
+                        errorMessage = 'Location request timed out.';
+                        break;
+                    default:
+                        errorMessage = 'An unknown error occurred.';
+                }
+                reject(new Error(errorMessage));
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 60000
+            }
+        );
+    });
 }
 
 // Initialize real-time predictions
@@ -131,7 +264,7 @@ function submitForm() {
     const originalText = submitBtn.innerHTML;
 
     // Show loading state
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> {{ _("Analyzing...") }}';
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing...';
     submitBtn.disabled = true;
 
     const formData = getFormData();
@@ -298,84 +431,118 @@ function updateSuitabilityChart(topCrops) {
                     title: {
                         display: true,
                         text: 'Suitability Score (%)'
-                    },
-                    grid: {
-                        color: 'rgba(0,0,0,0.1)'
                     }
                 },
                 x: {
                     title: {
                         display: true,
                         text: 'Crops'
-                    },
-                    grid: {
-                        display: false
                     }
                 }
-            },
-            animation: {
-                duration: 1000,
-                easing: 'easeInOutQuart'
             }
         }
     });
 }
 
+// Get confidence class for styling
+function getConfidenceClass(confidence) {
+    if (confidence >= 80) return 'high-confidence';
+    if (confidence >= 60) return 'medium-confidence';
+    return 'low-confidence';
+}
+
 // Show error message
 function showError(message) {
-    // You can implement a proper error display here
-    console.error('Error:', message);
-    alert('Error: ' + message);
+    const errorDiv = document.getElementById('error-message');
+    if (errorDiv) {
+        errorDiv.textContent = message;
+        errorDiv.style.display = 'block';
+        setTimeout(() => {
+            errorDiv.style.display = 'none';
+        }, 5000);
+    }
 }
 
 // Scroll to results section
 function scrollToResults() {
-    document.getElementById('results').scrollIntoView({
-        behavior: 'smooth',
-        block: 'start'
+    const resultsSection = document.getElementById('results');
+    if (resultsSection) {
+        resultsSection.scrollIntoView({ behavior: 'smooth' });
+    }
+}
+
+// Reset form function
+function resetForm() {
+    document.getElementById('crop-prediction-form').reset();
+    document.getElementById('results').style.display = 'none';
+    
+    // Reset sliders to default values
+    const defaultValues = {
+        'nitrogen': 50,
+        'phosphorus': 40,
+        'potassium': 30,
+        'temperature': 25,
+        'humidity': 60,
+        'ph': 6.5,
+        'rainfall': 100
+    };
+
+    Object.keys(defaultValues).forEach(id => {
+        const slider = document.getElementById(id);
+        const input = document.getElementById(id + '-input');
+        if (slider && input) {
+            slider.value = defaultValues[id];
+            input.value = defaultValues[id];
+        }
     });
+
+    // Schedule new prediction
+    scheduleRealTimePrediction();
 }
 
-// Scroll to form function
-function scrollToForm() {
-    document.getElementById('input-form').scrollIntoView({
-        behavior: 'smooth',
-        block: 'start'
-    });
+// Export data function
+function exportData() {
+    const formData = getFormData();
+    const data = {
+        parameters: formData,
+        timestamp: new Date().toISOString()
+    };
+    
+    const dataStr = JSON.stringify(data, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+    
+    const exportFileDefaultName = 'crop-analysis-' + new Date().toISOString().split('T')[0] + '.json';
+    
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
 }
 
-// Text-to-speech function
-function playText(elementId) {
-    const text = document.getElementById(elementId).textContent;
-    const lang = document.documentElement.lang;
-    window.open(`/speak/${encodeURIComponent(text)}`, '_blank');
+// Print results function
+function printResults() {
+    const printContent = document.getElementById('results').innerHTML;
+    const originalContent = document.body.innerHTML;
+    
+    document.body.innerHTML = printContent;
+    window.print();
+    document.body.innerHTML = originalContent;
+    location.reload();
 }
 
-// Utility function to get confidence class
-function getConfidenceClass(confidence) {
-    if (confidence >= 80) return 'confidence-high';
-    if (confidence >= 60) return 'confidence-medium';
-    return 'confidence-low';
+// Share results function
+function shareResults() {
+    const primaryCrop = document.getElementById('primary-crop-name').textContent;
+    const confidence = document.getElementById('primary-confidence').textContent;
+    
+    if (navigator.share) {
+        navigator.share({
+            title: 'Crop Recommendation',
+            text: `FasalAI recommended ${primaryCrop} with ${confidence} confidence!`,
+            url: window.location.href
+        }).catch(console.error);
+    } else {
+        // Fallback for browsers that don't support Web Share API
+        alert('Share this recommendation: ' + primaryCrop + ' with ' + confidence + ' confidence!');
+    }
 }
-
-// Add some interactive enhancements
-document.addEventListener('DOMContentLoaded', function () {
-    // Add smooth hover effects to cards
-    const cards = document.querySelectorAll('.card, .parameter-card, .stat-card');
-    cards.forEach(card => {
-        card.addEventListener('mouseenter', function () {
-            this.style.transform = 'translateY(-2px)';
-        });
-
-        card.addEventListener('mouseleave', function () {
-            this.style.transform = 'translateY(0)';
-        });
-    });
-});
-
-// Export functions for potential testing
-window.FasalAI = {
-    scrollToForm,
-    playText,
-    getRealTimePrediction
-};

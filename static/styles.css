@@ -1333,3 +1333,217 @@ html {
 .results-section {
   transition: all var(--duration-normal) var(--ease-standard);
 }
+/* Live Prediction Styles */
+.live-prediction-card {
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    padding: var(--space-24);
+    border: 1px solid var(--color-card-border);
+    box-shadow: var(--shadow-md);
+    margin-bottom: var(--space-32);
+}
+
+.live-prediction-content {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: var(--space-24);
+    align-items: center;
+}
+
+.live-prediction-info {
+    flex: 1;
+}
+
+.live-prediction-info h3 {
+    color: var(--color-primary);
+    margin-bottom: var(--space-8);
+}
+
+.live-prediction-info p {
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-12);
+}
+
+.live-prediction-info ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.live-prediction-info li {
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-4);
+    display: flex;
+    align-items: center;
+    gap: var(--space-8);
+}
+
+.live-prediction-info li i {
+    color: var(--color-success);
+}
+
+.live-prediction-action {
+    text-align: center;
+}
+
+.privacy-note {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    margin-top: var(--space-8);
+    max-width: 250px;
+}
+
+.live-result {
+    margin-top: var(--space-24);
+    padding: var(--space-20);
+    border-radius: var(--radius-lg);
+    background: var(--color-background);
+    border: 1px solid var(--color-border);
+    display: none;
+}
+
+.live-result.active {
+    display: block;
+}
+
+.loading-spinner {
+    text-align: center;
+    color: var(--color-primary);
+}
+
+.live-prediction-success {
+    animation: fadeIn 0.5s ease-in;
+}
+
+.success-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-16);
+    padding-bottom: var(--space-12);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.success-header h3 {
+    color: var(--color-success);
+    margin: 0;
+}
+
+.crop-result {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: var(--space-20);
+    align-items: start;
+    margin-bottom: var(--space-16);
+}
+
+.crop-icon-large {
+    font-size: 4rem;
+    text-align: center;
+}
+
+.crop-details h2 {
+    color: var(--color-text);
+    margin-bottom: var(--space-12);
+}
+
+.crop-info {
+    margin-bottom: var(--space-16);
+}
+
+.crop-info p {
+    margin: 0 0 var(--space-8) 0;
+    color: var(--color-text-secondary);
+}
+
+.crop-tips {
+    background: var(--color-bg-1);
+    padding: var(--space-16);
+    border-radius: var(--radius-base);
+    border-left: 4px solid var(--color-primary);
+}
+
+.crop-tips h4 {
+    color: var(--color-text);
+    margin-bottom: var(--space-8);
+    display: flex;
+    align-items: center;
+    gap: var(--space-8);
+}
+
+.crop-tips h4 i {
+    color: var(--color-primary);
+}
+
+.crop-tips p {
+    color: var(--color-text-secondary);
+    margin: 0;
+    line-height: 1.5;
+}
+
+.location-info {
+    background: var(--color-secondary);
+    padding: var(--space-12);
+    border-radius: var(--radius-base);
+    text-align: center;
+}
+
+.location-info p {
+    margin: 0;
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+}
+
+.location-info p i {
+    color: var(--color-primary);
+    margin-right: var(--space-8);
+}
+
+.live-prediction-error {
+    text-align: center;
+    color: var(--color-error);
+    padding: var(--space-20);
+}
+
+.live-prediction-error i {
+    font-size: 3rem;
+    margin-bottom: var(--space-12);
+}
+
+.live-prediction-error h3 {
+    margin-bottom: var(--space-8);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .live-prediction-content {
+        grid-template-columns: 1fr;
+        text-align: center;
+    }
+    
+    .crop-result {
+        grid-template-columns: 1fr;
+        text-align: center;
+    }
+    
+    .live-prediction-info {
+        text-align: center;
+    }
+    
+    .live-prediction-info ul {
+        text-align: left;
+        max-width: 300px;
+        margin: 0 auto;
+    }
+}

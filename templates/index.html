@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fasal AI - {{ _('AI Crop Recommendation System') }}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -24,6 +24,9 @@
             <i class="fas fa-volume-up"></i>
         </button>
     </div>
+
+    <!-- Error message container for JavaScript errors -->
+    <div id="error-message" class="alert alert--error" style="display: none;"></div>
 
     <header class="hero">
         <div class="container">
@@ -64,9 +67,40 @@
         </div>
     </header>
 
+    <!-- Live Prediction Section -->
+    <section class="input-section">
+        <div class="container">
+            <h2><i class="fas fa-location-dot"></i> {{ _('Live Location-Based Recommendation') }}</h2>
+            <p class="section-description">{{ _('Get instant crop recommendations based on your current location and real-time data from OpenWeatherMap and SoilGrids APIs') }}</p>
+
+            <div class="live-prediction-card">
+                <div class="live-prediction-content">
+                    <div class="live-prediction-info">
+                        <i class="fas fa-satellite"></i>
+                        <h3>{{ _('Real-time Analysis') }}</h3>
+                        <p>{{ _('Our system analyzes current weather conditions from OpenWeatherMap and soil data from SoilGrids to provide the most accurate recommendation.') }}</p>
+                    </div>
+                    
+                    <div class="live-prediction-action">
+                        <button id="getLocationBtn" class="btn btn--primary btn--lg">
+                            <i class="fas fa-location-crosshairs"></i>
+                            {{ _('Get Recommendation For My Location') }}
+                        </button>
+                        <p class="privacy-note">
+                            <i class="fas fa-shield-alt"></i>
+                            {{ _('Your location data is only used for crop recommendation and is not stored.') }}
+                        </p>
+                    </div>
+                </div>
+                
+                <div id="live-result" class="live-result"></div>
+            </div>
+        </div>
+    </section>
+
     <section class="input-section" id="input-form">
         <div class="container">
-            <h2><i class="fas fa-sliders-h"></i>{{ _('Soil & Climate Analysis') }}</h2>
+            <h2><i class="fas fa-sliders-h"></i>{{ _('Manual Soil & Climate Analysis') }}</h2>
             <p class="section-description">{{ _('Adjust the parameters below to get personalized crop recommendations')
                 }}</p>
 
