@@ -11,11 +11,78 @@ API Sources:
 Author: Fasal AI Team
 Date: 2025
 """
+from dotenv import load_dotenv, find_dotenv
+load_dotenv(find_dotenv())
 
 import os
 import logging
 from typing import Dict, Optional
 import requests
+
+
+OWM_KEY = os.getenv("OWM_API_KEY")
+SESSION = requests.Session()
+TIMEOUT = (5, 12)
+
+def _req(url, **kw):
+    r = SESSION.get(url, timeout=TIMEOUT, **kw)
+    r.raise_for_status()
+    return r.json()
+
+def fetch_weather_now(lat, lon):
+    """Temperature & humidity (rain if present)."""
+    if not OWM_KEY:
+        return {}
+    url = "https://api.openweathermap.org/data/2.5/weather"
+    j = _req(url, params={"lat": lat, "lon": lon, "units": "metric", "appid": OWM_KEY})
+    main = j.get("main") or {}
+    rain_now = (j.get("rain") or {})
+    return {
+        "temperature": main.get("temp"),
+        "humidity": main.get("humidity"),
+        "rain_now": rain_now.get("1h") or rain_now.get("3h")
+    }
+
+def fetch_rain_24h(lat, lon):
+    """Robust 24-hour rain using One Call API."""
+    if not OWM_KEY:
+        return None
+    try:
+        url = "https://api.openweathermap.org/data/2.5/onecall"
+        j = _req(url, params={
+            "lat": lat, "lon": lon, "units": "metric",
+            "exclude": "minutely,alerts", "appid": OWM_KEY
+        })
+        if j.get("hourly"):
+            return float(sum(h.get("rain", {}).get("1h", 0.0) for h in j["hourly"][:24]))
+        # fallback: some locations only provide daily[0].rain
+        return float((j.get("daily") or [{}])[0].get("rain", 0.0))
+    except Exception:
+        return None
+
+def fetch_soil(lat, lon):
+    """SoilGrids: N, P, K, pH at 0–5 cm depth."""
+    url = "https://rest.isric.org/soilgrids/v2.0/properties/query"
+    j = _req(url, params={
+        "lat": lat, "lon": lon,
+        "depth": "0-5cm",
+        "value": "mean",
+        "property": "phh2o,nitrogen,phosphorus,potassium"
+    })
+    props = j.get("properties") or {}
+    def pick(prop):
+        p = props.get(prop) or {}
+        if "mean" in p: return p["mean"]
+        if "values" in p and p["values"]:
+            return p["values"][0].get("value")
+        return None
+    return {
+        "ph": pick("phh2o"),
+        "N":  pick("nitrogen"),
+        "P":  pick("phosphorus"),
+        "K":  pick("potassium"),
+    }
+
 
 # Configure logging
 logging.basicConfig(
@@ -43,51 +110,40 @@ SOILGRIDS_PROPERTIES = {
 # SoilGrids depth layers
 SOILGRIDS_DEPTHS = ["0-5cm", "5-15cm", "15-30cm"]
 
-def get_live_data(latitude: float, longitude: float) -> Optional[Dict[str, float]]:
+def get_live_data(lat, lon):
     """
-    Fetch real-time weather and soil data based on GPS coordinates.
-    
-    Args:
-        latitude: Geographic latitude coordinate
-        longitude: Geographic longitude coordinate
-        
-    Returns:
-        Dictionary containing processed weather and soil data with keys:
-        - temperature (in °C)
-        - humidity (in %)
-        - rainfall (in mm)
-        - ph (pH value)
-        - organic_carbon (in g/kg)
-        - N (Nitrogen in cg/kg)
-        - P (Phosphorus in mg/kg)
-        - K (Potassium in mg/kg)
-        
-        Returns None if both API calls fail.
+    Fetch live soil + weather data for the given coordinates.
+    Returns dict with keys: N, P, K, ph, temperature, humidity, rainfall.
     """
-    # Initialize result dictionary
-    result_data = {}
-    
-    # Fetch weather data
-    weather_data = _fetch_weather_data(latitude, longitude)
-    if weather_data:
-        result_data.update(weather_data)
-        logger.info(f"Weather data fetched successfully: {weather_data}")
-    else:
-        logger.warning("Failed to fetch weather data")
-    
-    # Fetch soil data
-    soil_data = _fetch_soil_data(latitude, longitude)
-    if soil_data:
-        result_data.update(soil_data)
-        logger.info(f"Soil data fetched successfully: {soil_data}")
-    else:
-        logger.warning("Failed to fetch soil data")
-        # Provide default soil values if API fails
-        result_data.update(_get_default_soil_data())
-    
-    # Return None if no data was successfully fetched
-    return result_data if result_data else None
+    try:
+        # --- Weather ---
+        wx_now = fetch_weather_now(lat, lon) or {}
+        rain24 = fetch_rain_24h(lat, lon)
 
+        # --- Soil ---
+        try:
+            soil = fetch_soil(lat, lon) or {}
+        except Exception:
+            soil = {}
+
+        return {
+            # Soil (may be None if API fails; app will fill defaults)
+            "N":  soil.get("N"),
+            "P":  soil.get("P"),
+            "K":  soil.get("K"),
+            "ph": soil.get("ph"),
+
+            # Weather
+            "temperature": wx_now.get("temperature"),
+            "humidity":    wx_now.get("humidity"),
+            # Prefer 24h total, else quick rain from /weather, else None
+            "rainfall":    rain24 if (rain24 is not None) else wx_now.get("rain_now"),
+        }
+
+    except Exception as e:
+        import logging
+        logging.exception("Error in get_live_data")
+        return {}
 
 def _fetch_weather_data(latitude: float, longitude: float) -> Optional[Dict[str, float]]:
     """

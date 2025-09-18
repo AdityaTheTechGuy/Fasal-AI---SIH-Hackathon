@@ -1370,6 +1370,17 @@ html {
     margin: 0;
 }
 
+.chip {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--radius-full, 9999px);
+  background: var(--color-secondary, #f3f3f3);
+  border: 1px solid var(--color-border, #ccc);
+  font-size: var(--font-size-xs, 12px);
+  margin-right: 6px;
+}
+
+
 .live-prediction-info li {
     color: var(--color-text-secondary);
     margin-bottom: var(--space-4);

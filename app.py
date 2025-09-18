@@ -1,3 +1,6 @@
+from dotenv import load_dotenv, find_dotenv
+load_dotenv(find_dotenv())
+
 import os
 import pickle
 import numpy as np
@@ -8,14 +11,75 @@ from flask_babel import Babel, get_locale
 from gtts import gTTS
 from data_aggregator import get_live_data, validate_coordinates
 
+# --- Confidence display helper ---
+def display_confidence_topk(probabilities, k=3, temperature=0.85):
+    """
+    Reweights probabilities within top-k for display.
+    T < 1 sharpens peaks, T > 1 softens.
+    Returns (primary_conf, all_conf_list)
+    """
+    import numpy as np
+    probs = np.asarray(probabilities, dtype=float)
+    probs = np.maximum(probs, 1e-12)
+
+    if temperature and float(temperature) > 0:
+        T = float(temperature)
+        probs = probs ** (1.0 / T)
+        probs = probs / probs.sum()
+
+    # Focus only on top-k
+    topk_idx = np.argsort(probs)[-k:]
+    topk_sum = probs[topk_idx].sum()
+
+    disp = np.zeros_like(probs)
+    if topk_sum > 0:
+        disp[topk_idx] = probs[topk_idx] / topk_sum
+
+    top_idx = int(np.argmax(probs))
+    primary_disp = float(disp[top_idx] * 100.0)
+    return round(primary_disp, 1), [round(x * 100.0, 1) for x in disp]
+
+# --- Provenance helper: returns (float_value, "live"|"default") ---
+def coerce_float_with_provenance(val, default):
+    """
+    Try to cast val->float. If invalid or NaN, return default and mark source="default".
+    """
+    try:
+        v = float(val)
+        if v != v:  # NaN
+            raise ValueError("NaN")
+        return v, "live"
+    except Exception:
+        return float(default), "default"
+    
+    # --- Case-safe crop info lookup (returns (info_dict, canonical_name)) ---
+def get_crop_info_safe(name: str):
+    n = str(name).strip().lower()
+    for key, info in CROP_INFO.items():
+        if key.lower() == n:
+            return info, key  # return canonical dictionary key for display
+    # Fallback copy so we never mutate the global template
+    return {
+        'season': 'Season information not available',
+        'water_req': 'Water requirement not available',
+        'soil_type': 'Soil type not available',
+        'tips': 'Growing tips not available'
+    }, name
+
+
+
 app = Flask(__name__)
 app.config['BABEL_DEFAULT_LOCALE'] = os.environ.get('BABEL_DEFAULT_LOCALE', 'en')
 app.config['BABEL_TRANSLATION_DIRECTORIES'] = 'translations'
 
-from dotenv import load_dotenv, find_dotenv
-load_dotenv(find_dotenv())
+
 
 # Use proper secret key handling
+
+import logging
+logging.getLogger('data_aggregator').warning("OWM key visibility check: %s", bool(os.getenv("OWM_API_KEY")))
+
+
 app.secret_key = os.environ.get('FLASK_SECRET_KEY')
 if not app.secret_key:
     if os.environ.get('FLASK_ENV') == 'development':
@@ -139,30 +203,31 @@ def predict():
 
         features = np.array([[N, P, K, temperature, humidity, ph, rainfall]])
         
-        # Get all predictions with probabilities
         probabilities = model.predict_proba(features)[0]
         all_classes = label_encoder.classes_
-        
-        # Create list of all predictions with confidence scores
+
+        # Compute display confidences (relative within top-k)
+        primary_disp, all_disp = display_confidence_topk(probabilities, k=3, temperature=0.85)
+
+        # Build predictions using display (%) for UI
         all_predictions = []
         for i, prob in enumerate(probabilities):
             crop_name = all_classes[i]
-            confidence = prob * 100
             all_predictions.append({
                 'crop': crop_name,
-                'confidence': round(confidence, 1)
+                # use relative confidence for display
+                'confidence': all_disp[i]
             })
-        
-        # Sort by confidence descending
+
+        # Sort by display confidence descending
         all_predictions.sort(key=lambda x: x['confidence'], reverse=True)
-        
-        # Get primary prediction
+
+        # Primary + alternatives for the template
         primary_prediction = all_predictions[0]['crop']
-        primary_confidence = all_predictions[0]['confidence']
+        primary_confidence = all_predictions[0]['confidence']  # now relative % (top-k)
         crop_info = CROP_INFO.get(primary_prediction, {})
-        
-        # Get top 3 alternative predictions (excluding primary)
         alternative_predictions = all_predictions[1:4]
+
 
         return render_template('index.html', 
                                prediction=primary_prediction,
@@ -210,94 +275,121 @@ def api_predict():
         # Get all predictions with probabilities
         probabilities = model.predict_proba(features)[0]
         all_classes = label_encoder.classes_
-        
-        # Create list of all predictions with confidence scores
+
+        # Compute relative confidences
+        primary_disp, all_disp = display_confidence_topk(probabilities, k=3, temperature=0.85)
+
         all_predictions = []
         for i, prob in enumerate(probabilities):
             crop_name = all_classes[i]
-            confidence = prob * 100
             all_predictions.append({
                 'crop': crop_name,
-                'confidence': round(confidence, 1),
+                'confidence': round(float(prob * 100), 1),       # raw %
+                'display_confidence': all_disp[i],               # relative %
                 'crop_info': CROP_INFO.get(crop_name, {})
             })
-        
-        # Sort by confidence descending
-        all_predictions.sort(key=lambda x: x['confidence'], reverse=True)
+
+        # Sort by display_confidence (farmer-friendly ranking)
+        all_predictions.sort(key=lambda x: x['display_confidence'], reverse=True)
 
         return jsonify({
             'primary_prediction': all_predictions[0],
             'alternative_predictions': all_predictions[1:4],
             'all_predictions': all_predictions
         })
+
     except Exception as e:
         return jsonify({'error': str(e)}), 400
 
-# NEW: Live prediction endpoint using geolocation and real-time data
+# NEW: Live prediction endpoint using geolocation and real-time data (final)
 @app.route('/predict_live', methods=['POST'])
 def predict_live():
     try:
-        if model is None or label_encoder is None:
-            return jsonify({'status': 'error', 'message': 'Model not loaded. Please check server configuration.'}), 500
-        
-        # Get coordinates from request
-        data = request.get_json()
-        if not data or 'latitude' not in data or 'longitude' not in data:
+        if model is None:
+            return jsonify({'status': 'error', 'message': 'Model not loaded'}), 500
+
+        data = request.get_json(silent=True) or {}
+        if 'latitude' not in data or 'longitude' not in data:
             return jsonify({'status': 'error', 'message': 'Latitude and longitude are required.'}), 400
-        
-        latitude = float(data['latitude'])
-        longitude = float(data['longitude'])
-        
-        # Validate coordinates
-        if not validate_coordinates(latitude, longitude):
-            return jsonify({'status': 'error', 'message': 'Invalid coordinates provided.'}), 400
-        
-        # Fetch live data using the data aggregator
-        live_data = get_live_data(latitude, longitude)
-        
-        if live_data is None:
-            return jsonify({
-                'status': 'error', 
-                'message': 'Could not retrieve live data for the location. Please try manual input.'
-            }), 503  # Service unavailable
-        
-        # Prepare data for model prediction (must match training feature order)
-        features_df = pd.DataFrame([[
-            live_data.get('N', 0),
-            live_data.get('P', 0),
-            live_data.get('K', 0),
-            live_data.get('temperature', 0),
-            live_data.get('humidity', 0),
-            live_data.get('ph', 0),
-            live_data.get('rainfall', 0)
-        ]], columns=EXPECTED_FEATURES)
-        
-        # Make prediction
-        prediction = model.predict(features_df)
-        crop_name = label_encoder.inverse_transform(prediction)[0]
-        
-        # Get prediction probabilities
-        probabilities = model.predict_proba(features_df)[0]
-        confidence = max(probabilities) * 100
-        
-        # Get crop information
-        crop_info = CROP_INFO.get(crop_name, {})
-        
+
+        # Coordinates
+        try:
+            lat = float(data['latitude'])
+            lon = float(data['longitude'])
+        except Exception:
+            return jsonify({'status': 'error', 'message': 'Latitude/longitude must be numeric.'}), 400
+
+        if not validate_coordinates(lat, lon):
+            return jsonify({'status': 'error', 'message': 'Invalid coordinates.'}), 400
+
+        # Fetch live data from external APIs (OWM / SoilGrids inside data_aggregator)
+        live = get_live_data(lat, lon)
+        if not live:
+            return jsonify({'status': 'error', 'message': 'Could not retrieve live data.'}), 503
+
+        # ---- sanitize EVERYTHING to pure floats + provenance ----
+        vals = {}
+        provenance = {}
+
+        vals['N'],           provenance['N']           = coerce_float_with_provenance(live.get('N'),           50.0)
+        vals['P'],           provenance['P']           = coerce_float_with_provenance(live.get('P'),           40.0)
+        vals['K'],           provenance['K']           = coerce_float_with_provenance(live.get('K'),           200.0)
+        vals['temperature'], provenance['temperature'] = coerce_float_with_provenance(live.get('temperature'), 25.0)
+        vals['humidity'],    provenance['humidity']    = coerce_float_with_provenance(live.get('humidity'),    60.0)
+        vals['ph'],          provenance['ph']          = coerce_float_with_provenance(live.get('ph'),          6.5)
+        vals['rainfall'],    provenance['rainfall']    = coerce_float_with_provenance(live.get('rainfall'),    0.0)
+
+        # Feature vector for model
+        features = np.array([[vals['N'], vals['P'], vals['K'],
+                              vals['temperature'], vals['humidity'],
+                              vals['ph'], vals['rainfall']]], dtype=float)
+
+        # Predict class + probabilities
+        probs = model.predict_proba(features)[0]
+        classes = getattr(label_encoder, 'classes_', getattr(model, 'classes_', None))
+        top_idx = int(np.argmax(probs))
+        crop = str(classes[top_idx]) if classes is not None else str(model.predict(features)[0])
+
+        # Use relative (top-k) confidence for farmer-facing UI
+        primary_disp, _ = display_confidence_topk(probs, k=3, temperature=0.85)
+        conf = round(primary_disp, 1)
+
+        # Overall data quality summary
+        defaults_used = [k for k, src in provenance.items() if src == "default"]
+        data_quality = (
+            "live" if not defaults_used else
+            "mixed" if len(defaults_used) < len(provenance) else
+            "default-only"
+        )
+
+        # Attach crop info (case-safe) and use canonical name for display
+        crop_info, canonical_name = get_crop_info_safe(crop)
+
         return jsonify({
             'status': 'success',
-            'crop': crop_name,
-            'confidence': round(confidence, 2),
+            'crop': canonical_name,   # show "Muskmelon" instead of "muskmelon"
+            'confidence': conf,
             'crop_info': crop_info,
-            'location_data': {
-                'latitude': latitude,
-                'longitude': longitude
-            },
-            'environment_data': live_data
+            'environment_data': vals,
+            'provenance': provenance,
+            'data_quality': data_quality,
+            'defaults_used': defaults_used,
+            'location_data': {'latitude': lat, 'longitude': lon}
         })
-        
+
+
     except Exception as e:
-        print(f"Error in predict_live: {str(e)}")
-        return jsonify({'status': 'error', 'message': f'An error occurred: {str(e)}'}), 500
+        # Optional debug to help diagnose data shape/type issues quickly
+        dbg = None
+        try:
+            dbg = {'incoming_live': live if 'live' in locals() else None,
+                   'provenance': provenance if 'provenance' in locals() else None}
+        except Exception:
+            pass
+        return jsonify({'status': 'error', 'message': str(e), 'debug': dbg}), 500
+
+
+
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))

@@ -26,8 +26,114 @@ const cropDatabase = {
     "Jute": { name: "Jute", season: "Kharif (April-August)", water_req: "High (1000-1500mm)", soil_type: "Alluvial soil with high moisture", tips: "Requires high humidity, harvest at proper maturity.", icon: "🌾" }
 };
 
+const keyLabels = {
+  N: "Nitrogen (N)",
+  P: "Phosphorus (P)",
+  K: "Potassium (K)",
+  ph: "Soil pH",
+  temperature: "Air temperature",
+  humidity: "Humidity",
+  rainfall: "Rainfall (24h)"
+};
+
+
 let suitabilityChart = null;
 let predictionTimeout = null;
+
+// --- Helpers for live recommendation UI -----------------------------
+
+function formatLatLng(lat, lon) {
+  const latAbs = Math.abs(Number(lat)).toFixed(4);
+  const lonAbs = Math.abs(Number(lon)).toFixed(4);
+  const latHem = Number(lat) >= 0 ? "N" : "S";
+  const lonHem = Number(lon) >= 0 ? "E" : "W";
+  return `${latAbs}°${latHem}, ${lonAbs}°${lonHem}`;
+}
+
+function badgeForDataQuality(q) {
+  const quality = (q || "live").toLowerCase();
+  const cls =
+    quality === "live" ? "status--success" :
+    quality === "mixed" ? "status--warning" :
+    "status--error";
+  const label =
+    quality === "live" ? "Live data" :
+    quality === "mixed" ? "Partly defaulted" :
+    "Defaults only";
+  return `<span class="status ${cls}" style="margin-left:8px">${label}</span>`;
+}
+
+/**
+ * Renders the entire Live result card.
+ * Expects payload from /predict_live with:
+ *  crop, confidence, crop_info{season,water_req,soil_type,tips},
+ *  data_quality, defaults_used[], location_data{latitude,longitude}
+ */
+function renderLiveResult(container, data) {
+  const liveResult = container;
+  const provNote = (data.defaults_used && data.defaults_used.length)
+  ? `<div class="location-info" style="margin-top:8px">
+       <p><i class="fas fa-circle-info"></i>
+         Some values used defaults:
+         ${data.defaults_used.map(k => `<span class="chip">${keyLabels[k] || k}</span>`).join(" ")}
+       </p>
+     </div>`
+  : `<div class="location-info" style="margin-top:8px">
+       <p><i class="fas fa-circle-check"></i> Using live soil &amp; weather data</p>
+     </div>`;
+
+
+  const crop = data.crop || "—";
+  const ci = data.crop_info || {};
+  const lat = data.location_data?.latitude;
+  const lon = data.location_data?.longitude;
+
+  // pick icon from your local database when possible
+  const icon = (cropDatabase[crop] && cropDatabase[crop].icon) ? cropDatabase[crop].icon : "🌱";
+
+
+  liveResult.classList.add("active");
+  liveResult.innerHTML = `
+    <div class="live-prediction-success">
+      <div class="success-header">
+        <h3>Live Recommendation ${badgeForDataQuality(data.data_quality)}</h3>
+        <div class="confidence-badge">${(data.confidence ?? 0)}% Confidence</div>
+      </div>
+
+      <div class="crop-result">
+        <div class="crop-icon-large">${icon}</div>
+
+        <div class="crop-details">
+          <h2>${crop}</h2>
+
+          <div class="crop-info">
+            <p><strong>Season:</strong> ${ci.season || "—"}</p>
+            <p><strong>Water Requirement:</strong> ${ci.water_req || "—"}</p>
+            <p><strong>Soil Type:</strong> ${ci.soil_type || "—"}</p>
+          </div>
+
+          <div class="crop-tips">
+            <h4><i class="fas fa-lightbulb"></i> Growing Tips</h4>
+            <p>${ci.tips || "—"}</p>
+          </div>
+
+          ${provNote}
+        </div>
+      </div>
+
+      <div class="location-info" style="margin-top:12px">
+        <p><i class="fas fa-location-dot"></i>
+          Location: ${formatLatLng(lat, lon)}
+        </p>
+        <p><i class="fas fa-database"></i>
+          Data Sources: OpenWeatherMap + SoilGrids API
+        </p>
+      </div>
+    </div>
+  `;
+}
+
+
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function () {
@@ -116,53 +222,19 @@ async function handleLivePrediction() {
         const data = await response.json();
 
         if (data.status === 'success') {
-            // Display success result
-            const crop = cropDatabase[data.crop] || {
-                name: data.crop,
-                season: 'Season information not available',
-                water_req: 'Water requirement not available',
-                soil_type: 'Soil type not available',
-                tips: 'Growing tips not available',
-                icon: '🌱'
-            };
+    // Use the unified renderer (adds data-quality badge + defaults list + crop info)
+    renderLiveResult(resultDiv, data);
+} else {
+    // Display error from backend
+    resultDiv.innerHTML = `
+        <div class="live-prediction-error">
+            <i class="fas fa-exclamation-triangle"></i>
+            <h3>Error</h3>
+            <p>${data.message || 'An error occurred while processing your request.'}</p>
+        </div>
+    `;
+}
 
-            resultDiv.innerHTML = `
-                <div class="live-prediction-success">
-                    <div class="success-header">
-                        <h3><i class="fas fa-check-circle"></i> Live Recommendation</h3>
-                        <span class="confidence-badge">${Math.round(data.confidence)}% Confidence</span>
-                    </div>
-                    <div class="crop-result">
-                        <div class="crop-icon-large">${crop.icon}</div>
-                        <div class="crop-details">
-                            <h2>${crop.name}</h2>
-                            <div class="crop-info">
-                                <p><strong>Season:</strong> ${crop.season}</p>
-                                <p><strong>Water Requirement:</strong> ${crop.water_req}</p>
-                                <p><strong>Soil Type:</strong> ${crop.soil_type}</p>
-                            </div>
-                            <div class="crop-tips">
-                                <h4><i class="fas fa-lightbulb"></i> Growing Tips</h4>
-                                <p>${crop.tips}</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="location-info">
-                        <p><i class="fas fa-map-marker-alt"></i> Location: ${latitude.toFixed(4)}°N, ${longitude.toFixed(4)}°E</p>
-                        <p><i class="fas fa-database"></i> Data Sources: OpenWeatherMap + SoilGrids API</p>
-                    </div>
-                </div>
-            `;
-        } else {
-            // Display error
-            resultDiv.innerHTML = `
-                <div class="live-prediction-error">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <h3>Error</h3>
-                    <p>${data.message || 'An error occurred while processing your request.'}</p>
-                </div>
-            `;
-        }
     } catch (error) {
         console.error('Live prediction error:', error);
         resultDiv.innerHTML = `
@@ -446,10 +518,11 @@ function updateSuitabilityChart(topCrops) {
 
 // Get confidence class for styling
 function getConfidenceClass(confidence) {
-    if (confidence >= 80) return 'high-confidence';
-    if (confidence >= 60) return 'medium-confidence';
-    return 'low-confidence';
+    if (confidence >= 80) return 'confidence-high';
+    if (confidence >= 60) return 'confidence-medium';
+    return 'confidence-low';
 }
+
 
 // Show error message
 function showError(message) {
