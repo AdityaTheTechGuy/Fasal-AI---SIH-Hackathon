@@ -98,7 +98,7 @@ if not app.secret_key:
 
 babel = Babel(app)
 
-LANGUAGES = {'en': 'English', 'hi': 'हिंदी', 'mr': 'मराठी', 'gu': 'ગુજરાતી', 'bn': 'বাংলা'}
+LANGUAGES = {'en': 'English', 'hi': 'हिंदी', 'gu': 'ગુજરાતી', 'bn': 'বাংলা', 'or': 'ଓଡିଆ', 'bho': 'भोजपुरी'}
 
 @babel.localeselector
 def get_user_locale():

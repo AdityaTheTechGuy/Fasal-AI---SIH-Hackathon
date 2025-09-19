@@ -75,7 +75,7 @@ function formatLatLng(lat, lon) {
 }
 
 function badgeForDataQuality() {
-  return `<span class="status status--success" style="margin-left:8px">Live data</span>`;
+  return `<span class="status status--success" style="margin-left:8px">${(window.I18N && window.I18N.live_data_badge) || 'Live data'}</span>`;
 }
 
 /**
@@ -87,7 +87,7 @@ function badgeForDataQuality() {
 function renderLiveResult(container, data) {
   const liveResult = container;
   const provNote = `<div class="location-info" style="margin-top:8px">
-       <p><i class="fas fa-circle-check"></i> Using live soil &amp; weather data</p>
+       <p><i class="fas fa-circle-check"></i> ${(window.I18N && window.I18N.using_live_data_note) || 'Using live soil &amp; weather data'}</p>
      </div>`;
 
 
@@ -103,8 +103,8 @@ function renderLiveResult(container, data) {
   liveResult.innerHTML = `
     <div class="live-prediction-success">
       <div class="success-header">
-        <h3>Live Recommendation ${badgeForDataQuality()}</h3>
-        <div class="confidence-badge">${(data.confidence ?? 0)}% Confidence</div>
+        <h3>${(window.I18N && window.I18N.live_recommendation) || 'Live Recommendation'} ${badgeForDataQuality()}</h3>
+        <div class="confidence-badge">${(data.confidence ?? 0)}% ${(window.I18N && window.I18N.confidence) || 'Confidence'}</div>
       </div>
 
       <div class="crop-result">
@@ -114,14 +114,14 @@ function renderLiveResult(container, data) {
           <h2>${crop}</h2>
 
           <div class="crop-info">
-            <p><strong>Season:</strong> ${ci.season || "—"}</p>
-            <p><strong>Water Requirement:</strong> ${ci.water_req || "—"}</p>
-            <p><strong>Soil Type:</strong> ${ci.soil_type || "—"}</p>
+            <p><strong>${(window.I18N && window.I18N.season) || 'Season'}:</strong> ${ci.season || '—'}</p>
+            <p><strong>${(window.I18N && window.I18N.water_requirement) || 'Water Requirement'}:</strong> ${ci.water_req || '—'}</p>
+            <p><strong>${(window.I18N && window.I18N.soil_type) || 'Soil Type'}:</strong> ${ci.soil_type || '—'}</p>
           </div>
 
           <div class="crop-tips">
-            <h4><i class="fas fa-lightbulb"></i> Growing Tips</h4>
-            <p>${ci.tips || "—"}</p>
+            <h4><i class="fas fa-lightbulb"></i> ${(window.I18N && window.I18N.growing_tips) || 'Growing Tips'}</h4>
+            <p>${ci.tips || '—'}</p>
           </div>
 
           ${provNote}
@@ -130,10 +130,10 @@ function renderLiveResult(container, data) {
 
       <div class="location-info" style="margin-top:12px">
         <p><i class="fas fa-location-dot"></i>
-          Location: ${formatLatLng(lat, lon)}
+          ${(window.I18N && window.I18N.location) || 'Location'}: ${formatLatLng(lat, lon)}
         </p>
         <p><i class="fas fa-database"></i>
-          Data Sources: OpenWeatherMap + SoilGrids API
+          ${(window.I18N && window.I18N.data_sources) || 'Data Sources: OpenWeatherMap + SoilGrids API'}
         </p>
       </div>
     </div>
@@ -207,7 +207,7 @@ async function handleLivePrediction() {
     if (!resultDiv) return;
 
     // Show loading state
-    resultDiv.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> Fetching your location...</div>';
+    resultDiv.innerHTML = `<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> ${(window.I18N && window.I18N.fetching_location) || 'Fetching your location...'}</div>`;
     resultDiv.className = 'live-result active';
 
     try {
@@ -216,7 +216,7 @@ async function handleLivePrediction() {
         const { latitude, longitude } = position.coords;
 
         // Update UI
-        resultDiv.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> Location found! Analyzing soil and climate data...</div>';
+        resultDiv.innerHTML = `<div class=\"loading-spinner\"><i class=\"fas fa-spinner fa-spin\"></i> ${(window.I18N && window.I18N.location_found_analyzing) || 'Location found! Analyzing soil and climate data...'}</div>`;
 
         // Make prediction request
         const response = await fetch('/predict_live', {
@@ -244,8 +244,8 @@ async function handleLivePrediction() {
             resultDiv.innerHTML = `
                 <div class="live-prediction-error">
                     <i class="fas fa-exclamation-triangle"></i>
-                    <h3>Error</h3>
-                    <p>${data.message || 'An error occurred while processing your request.'}</p>
+                    <h3>${(window.I18N && window.I18N.error) || 'Error'}</h3>
+                    <p>${data.message || ((window.I18N && window.I18N.error_processing_request) || 'An error occurred while processing your request.')}</p>
                 </div>
             `;
         }
@@ -255,8 +255,8 @@ async function handleLivePrediction() {
         resultDiv.innerHTML = `
             <div class="live-prediction-error">
                 <i class="fas fa-exclamation-triangle"></i>
-                <h3>Error</h3>
-                <p>${error.message || 'An error occurred while processing your request.'}</p>
+                <h3>${(window.I18N && window.I18N.error) || 'Error'}</h3>
+                <p>${error.message || ((window.I18N && window.I18N.error_processing_request) || 'An error occurred while processing your request.')}</p>
             </div>
         `;
     }
@@ -266,7 +266,7 @@ async function handleLivePrediction() {
 function getCurrentPosition() {
     return new Promise((resolve, reject) => {
         if (!navigator.geolocation) {
-            reject(new Error('Geolocation is not supported by your browser.'));
+            reject(new Error((window.I18N && window.I18N.geolocation_not_supported) || 'Geolocation is not supported by your browser.'));
             return;
         }
 
@@ -276,16 +276,16 @@ function getCurrentPosition() {
                 let errorMessage;
                 switch(error.code) {
                     case error.PERMISSION_DENIED:
-                        errorMessage = 'Location access was denied. Please enable location permissions.';
+                        errorMessage = (window.I18N && window.I18N.geolocation_denied) || 'Location access was denied. Please enable location permissions.';
                         break;
                     case error.POSITION_UNAVAILABLE:
-                        errorMessage = 'Location information is unavailable.';
+                        errorMessage = (window.I18N && window.I18N.geolocation_unavailable) || 'Location information is unavailable.';
                         break;
                     case error.TIMEOUT:
-                        errorMessage = 'Location request timed out.';
+                        errorMessage = (window.I18N && window.I18N.geolocation_timeout) || 'Location request timed out.';
                         break;
                     default:
-                        errorMessage = 'An unknown error occurred.';
+                        errorMessage = (window.I18N && window.I18N.geolocation_unknown) || 'An unknown error occurred.';
                 }
                 reject(new Error(errorMessage));
             },
@@ -353,7 +353,7 @@ function submitForm() {
     const originalText = submitBtn.innerHTML;
 
     // Show loading state
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing...';
+    submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${((window.I18N && window.I18N.analyzing) || 'Analyzing...')}`;
     submitBtn.disabled = true;
 
     const formData = getFormData();
@@ -381,7 +381,7 @@ function submitForm() {
         })
         .catch(error => {
             console.error('Error:', error);
-            showError('An error occurred while processing your request.');
+            showError(((window.I18N && window.I18N.error_processing_request) || 'An error occurred while processing your request.'));
         })
         .finally(() => {
             // Restore button state
@@ -498,7 +498,7 @@ function updateSuitabilityChart(topCrops) {
         data: {
             labels: labels,
             datasets: [{
-                label: 'Suitability Score',
+                label: (window.I18N && window.I18N.suitability_score) || 'Suitability Score',
                 data: scores,
                 backgroundColor: colors.slice(0, labels.length),
                 borderColor: colors.slice(0, labels.length),
@@ -513,7 +513,7 @@ function updateSuitabilityChart(topCrops) {
             plugins: {
                 title: {
                     display: true,
-                    text: 'Crop Suitability Analysis',
+                    text: (window.I18N && window.I18N.suitability_chart_title) || 'Crop Suitability Analysis',
                     font: {
                         size: 16,
                         weight: 'bold'
@@ -529,13 +529,13 @@ function updateSuitabilityChart(topCrops) {
                     max: 100,
                     title: {
                         display: true,
-                        text: 'Suitability Score (%)'
+                        text: (window.I18N && window.I18N.suitability_score_pct) || 'Suitability Score (%)'
                     }
                 },
                 x: {
                     title: {
                         display: true,
-                        text: 'Crops'
+                        text: (window.I18N && window.I18N.crops_label) || 'Crops'
                     }
                 }
             }
@@ -637,13 +637,13 @@ function shareResults() {
     
     if (navigator.share) {
         navigator.share({
-            title: 'Crop Recommendation',
-            text: `FasalAI recommended ${primaryCrop} with ${confidence} confidence!`,
+            title: (window.I18N && window.I18N.share_title) || 'Crop Recommendation',
+            text: `FasalAI recommended ${primaryCrop} with ${confidence} ${(window.I18N && window.I18N.confidence_label) || 'confidence'}!`,
             url: window.location.href
         }).catch(console.error);
     } else {
         // Fallback for browsers that don't support Web Share API
-        alert('Share this recommendation: ' + primaryCrop + ' with ' + confidence + ' confidence!');
+        alert(((window.I18N && window.I18N.share_fallback) || 'Share this recommendation:') + ' ' + primaryCrop + ' ' + ((window.I18N && window.I18N.confidence_label) || 'confidence') + ' ' + confidence + '!');
     }
 }
 

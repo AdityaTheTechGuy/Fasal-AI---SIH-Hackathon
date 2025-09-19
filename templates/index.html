@@ -421,6 +421,38 @@
     .chat-input input{flex:1;padding:8px 10px;border:1px solid #e5e7eb;border-radius:8px}
     </style>
 
+    <script>
+    window.I18N = {
+      fetching_location: "{{ _('Fetching your location...') }}",
+      location_found_analyzing: "{{ _('Location found! Analyzing soil and climate data...') }}",
+      live_recommendation: "{{ _('Live Recommendation') }}",
+      confidence: "{{ _('Confidence') }}",
+      season: "{{ _('Season') }}",
+      water_requirement: "{{ _('Water Requirement') }}",
+      soil_type: "{{ _('Soil Type') }}",
+      growing_tips: "{{ _('Growing Tips') }}",
+      location: "{{ _('Location') }}",
+      data_sources: "{{ _('Data Sources: OpenWeatherMap + SoilGrids API') }}",
+      error: "{{ _('Error') }}",
+      error_processing_request: "{{ _('An error occurred while processing your request.') }}",
+      network_error_try_again: "{{ _('Network error. Please try again.') }}",
+      analyzing: "{{ _('Analyzing...') }}",
+      suitability_score: "{{ _('Suitability Score') }}",
+      suitability_chart_title: "{{ _('Crop Suitability Analysis') }}",
+      suitability_score_pct: "{{ _('Suitability Score (%%)') }}",
+      crops_label: "{{ _('Crops') }}",
+      live_data_badge: "{{ _('Live data') }}",
+      using_live_data_note: "{{ _('Using live soil & weather data') }}",
+      share_title: "{{ _('Crop Recommendation') }}",
+      share_fallback: "{{ _('Share this recommendation:') }}",
+      confidence_label: "{{ _('confidence') }}",
+      geolocation_not_supported: "{{ _('Geolocation is not supported by your browser.') }}",
+      geolocation_denied: "{{ _('Location access was denied. Please enable location permissions.') }}",
+      geolocation_unavailable: "{{ _('Location information is unavailable.') }}",
+      geolocation_timeout: "{{ _('Location request timed out.') }}",
+      geolocation_unknown: "{{ _('An unknown error occurred.') }}"
+    };
+    </script>
     <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
 
