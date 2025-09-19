@@ -1,4 +1,5 @@
 from dotenv import load_dotenv, find_dotenv
+
 load_dotenv(find_dotenv())
 
 import os
@@ -17,6 +18,7 @@ def get_district_npk(district_name):
     name_norm = str(district_name).strip().lower()
     jh_district_data['district_norm'] = jh_district_data['district'].str.strip().str.lower()
     row = jh_district_data[jh_district_data['district_norm'] == name_norm]
+
     if not row.empty:
         return {
             "N": float(row.iloc[0]["N"]),
@@ -26,22 +28,21 @@ def get_district_npk(district_name):
         }
     return None
 
-
-
 # Import numpy at the top level
 import numpy as np
 
-# --- Confidence display helper ---
-def display_confidence_topk(probabilities, k=3, temperature=0.85):
+# --- Updated Confidence display helper for better sensitivity ---
+def display_confidence_topk(probabilities, k=3, temperature=1.0):
     """
-    Reweights probabilities within top-k for display.
+    Updated confidence display function with better sensitivity.
+    Reduced default temperature from 0.85 to 1.0 for more natural probability display.
     T < 1 sharpens peaks, T > 1 softens.
     Returns (primary_conf, all_conf_list)
     """
     # Convert input to numpy array
     probs = np.array(probabilities, dtype=float)
     probs = np.maximum(probs, 1e-12)
-    
+
     if temperature and float(temperature) > 0:
         T = float(temperature)
         probs = probs ** (1.0 / T)
@@ -49,7 +50,7 @@ def display_confidence_topk(probabilities, k=3, temperature=0.85):
 
     # Get indices sorted by probability (descending)
     sorted_idx = np.argsort(probs)[::-1]  # Reverse to get descending order
-    
+
     # Take top k indices
     topk_idx = sorted_idx[:k]
     topk_sum = probs[topk_idx].sum()
@@ -60,13 +61,17 @@ def display_confidence_topk(probabilities, k=3, temperature=0.85):
 
     top_idx = int(sorted_idx[0])  # Most probable class
     primary_disp = float(disp[top_idx] * 100.0)
+
     # Return a NumPy array instead of a list
-    return round(primary_disp, 1), np.round(disp * 100.0, 1)# --- Case-safe crop info lookup (returns (info_dict, canonical_name)) ---
+    return round(primary_disp, 1), np.round(disp * 100.0, 1)
+
+# --- Case-safe crop info lookup (returns (info_dict, canonical_name)) ---
 def get_crop_info_safe(name: str):
     n = str(name).strip().lower()
     for key, info in CROP_INFO.items():
         if key.lower() == n:
             return info, key  # return canonical dictionary key for display
+
     # Fallback copy so we never mutate the global template
     return {
         'season': 'Season information not available',
@@ -75,19 +80,13 @@ def get_crop_info_safe(name: str):
         'tips': 'Growing tips not available'
     }, name
 
-
-
 app = Flask(__name__)
 app.config['BABEL_DEFAULT_LOCALE'] = os.environ.get('BABEL_DEFAULT_LOCALE', 'en')
 app.config['BABEL_TRANSLATION_DIRECTORIES'] = 'translations'
 
-
-
 # Use proper secret key handling
-
 import logging
 logging.getLogger('data_aggregator').warning("OWM key visibility check: %s", bool(os.getenv("OWM_API_KEY")))
-
 
 app.secret_key = os.environ.get('FLASK_SECRET_KEY')
 if not app.secret_key:
@@ -97,7 +96,6 @@ if not app.secret_key:
         raise ValueError("No FLASK_SECRET_KEY set for production environment")
 
 babel = Babel(app)
-
 LANGUAGES = {'en': 'English', 'hi': 'हिंदी', 'gu': 'ગુજરાતી', 'bn': 'বাংলা', 'or': 'ଓଡିଆ', 'bho': 'भोजपुरी'}
 
 @babel.localeselector
@@ -126,33 +124,67 @@ def text_to_speech(text):
 # Expected feature order for model prediction
 EXPECTED_FEATURES = ['N', 'P', 'K', 'temperature', 'humidity', 'ph', 'rainfall']
 
-
-# Load model and label encoder only once when application starts
+# Load model with enhanced error handling and metadata support
 try:
     with open('crop_recommendation_model.pkl', 'rb') as f:
-        model = pickle.load(f)
-    
+        model_data = pickle.load(f)
+
+    # Check if it's the new enhanced model format with metadata
+    if isinstance(model_data, dict) and 'model' in model_data:
+        print("✅ Loading enhanced model with metadata...")
+        model = model_data['model']
+        feature_names = model_data.get('feature_names', EXPECTED_FEATURES)
+        feature_importance = model_data.get('feature_importance', {})
+        crop_labels = model_data.get('crop_labels', [])
+
+        print(f"✅ Model type: {type(model).__name__}")
+        print(f"✅ Features: {feature_names}")
+        print(f"✅ Available crops: {len(crop_labels)}")
+
+        if feature_importance:
+            print("✅ Feature importance loaded:")
+            for feature, importance in sorted(feature_importance.items(), 
+                                            key=lambda x: x[1], reverse=True):
+                print(f"   {feature}: {importance:.4f}")
+    else:
+        # Legacy model format
+        print("⚠️  Loading legacy model format...")
+        model = model_data
+        feature_names = EXPECTED_FEATURES
+        feature_importance = {}
+        crop_labels = []
+
     # Verify it's a scikit-learn model
     if not hasattr(model, 'predict_proba'):
         print("Warning: Loaded model doesn't have predict_proba method")
-        
-    print(f"✅ Loaded Model Type: {type(model).__name__}")
-    
-    # Try to load label encoder but don't fail if it doesn't exist
-    try:
-        with open('label_encoder.pkl', 'rb') as f:
-            label_encoder = pickle.load(f)
-        print("✓ Label encoder loaded successfully!")
-    except FileNotFoundError:
-        print("⚠️  Label encoder not found, using model's classes if available")
-        label_encoder = None
-        if hasattr(model, 'classes_'):
-            print("✓ Using model's built-in classes")
-except Exception as e:
-    print(f"Error loading model: {e}")
-    model = None
-    label_encoder = None
 
+    print(f"✅ Loaded Model Type: {type(model).__name__}")
+
+except FileNotFoundError:
+    print("❌ Model file not found. Please train the model first using train_model_updated.py")
+    model = None
+    feature_names = EXPECTED_FEATURES
+    feature_importance = {}
+    crop_labels = []
+except Exception as e:
+    print(f"❌ Error loading model: {e}")
+    model = None
+    feature_names = EXPECTED_FEATURES
+    feature_importance = {}
+    crop_labels = []
+
+# Try to load label encoder but don't fail if it doesn't exist
+try:
+    with open('label_encoder.pkl', 'rb') as f:
+        label_encoder = pickle.load(f)
+        print("✓ Label encoder loaded successfully!")
+except FileNotFoundError:
+    print("⚠️ Label encoder not found, using model's classes if available")
+    label_encoder = None
+    if hasattr(model, 'classes_'):
+        print("✓ Using model's built-in classes")
+
+# Updated CROP_INFO with standardized case
 CROP_INFO = {
     'Rice': {'season': 'Kharif (June-November)', 'water_req': 'High (1200-2500mm)', 'soil_type': 'Clay loam, well-drained', 'tips': 'Ensure proper water management and pest control.'},
     'Maize': {'season': 'Kharif/Rabi', 'water_req': 'Medium (500-800mm)', 'soil_type': 'Well-drained loamy soil', 'tips': 'Apply balanced fertilizers and control stem borer.'},
@@ -180,21 +212,24 @@ CROP_INFO = {
 
 @app.route('/')
 def home():
-    return render_template('index.html', 
-                           languages=LANGUAGES, 
-                           prediction=None, 
-                           confidence=None, 
-                           crop_info=None,
-                           input_values=None,
-                           alternative_predictions=None)
+    return render_template('index.html',
+                         languages=LANGUAGES,
+                         prediction=None,
+                         confidence=None,
+                         crop_info=None,
+                         input_values=None,
+                         alternative_predictions=None)
 
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
         if model is None:
-            return render_template('index.html', error="Model not loaded. Please check server configuration.", languages=LANGUAGES)
+            return render_template('index.html', 
+                                 error="Model not loaded. Please train the model using train_model_updated.py", 
+                                 languages=LANGUAGES)
 
         input_values_form = request.form
+
         N = float(input_values_form['nitrogen'])
         P = float(input_values_form['phosphorus'])
         K = float(input_values_form['potassium'])
@@ -203,44 +238,57 @@ def predict():
         ph = float(input_values_form['ph'])
         rainfall = float(input_values_form['rainfall'])
 
+        # Input validation
         if not (0 <= N <= 200):
-            return render_template('index.html', error="Nitrogen must be between 0-200 kg/ha.", languages=LANGUAGES, input_values=input_values_form)
+            return render_template('index.html', error="Nitrogen must be between 0-200 kg/ha.", 
+                                 languages=LANGUAGES, input_values=input_values_form)
         if not (0 <= P <= 150):
-            return render_template('index.html', error="Phosphorus must be between 0-150 kg/ha.", languages=LANGUAGES, input_values=input_values_form)
+            return render_template('index.html', error="Phosphorus must be between 0-150 kg/ha.", 
+                                 languages=LANGUAGES, input_values=input_values_form)
         if not (0 <= K <= 300):
-            return render_template('index.html', error="Potassium must be between 0-300 kg/ha.", languages=LANGUAGES, input_values=input_values_form)
+            return render_template('index.html', error="Potassium must be between 0-300 kg/ha.", 
+                                 languages=LANGUAGES, input_values=input_values_form)
         if not (5 <= temperature <= 45):
-            return render_template('index.html', error="Temperature must be between 5-45°C.", languages=LANGUAGES, input_values=input_values_form)
+            return render_template('index.html', error="Temperature must be between 5-45°C.", 
+                                 languages=LANGUAGES, input_values=input_values_form)
         if not (10 <= humidity <= 100):
-            return render_template('index.html', error="Humidity must be between 10-100%.", languages=LANGUAGES, input_values=input_values_form)
+            return render_template('index.html', error="Humidity must be between 10-100%.", 
+                                 languages=LANGUAGES, input_values=input_values_form)
         if not (3 <= ph <= 10):
-            return render_template('index.html', error="pH must be between 3-10.", languages=LANGUAGES, input_values=input_values_form)
+            return render_template('index.html', error="pH must be between 3-10.", 
+                                 languages=LANGUAGES, input_values=input_values_form)
         if not (200 <= rainfall <= 3000):
-            return render_template(
-                'index.html',
-                error="Annual rainfall must be between 200–3000 mm.",
-                languages=LANGUAGES,
-                input_values=input_values_form
-            )
-
+            return render_template('index.html',
+                                 error="Annual rainfall must be between 200–3000 mm.",
+                                 languages=LANGUAGES,
+                                 input_values=input_values_form)
 
         features = np.array([[N, P, K, temperature, humidity, ph, rainfall]])
-        
         probabilities = model.predict_proba(features)[0]
-        all_classes = label_encoder.classes_
 
-        # Compute display confidences (relative within top-k)
-        primary_disp, all_disp = display_confidence_topk(probabilities, k=3, temperature=0.85)
+        # Get classes - handle both legacy and enhanced model formats
+        if hasattr(model, 'classes_'):
+            all_classes = model.classes_
+        elif crop_labels:
+            all_classes = crop_labels
+        elif label_encoder and hasattr(label_encoder, 'classes_'):
+            all_classes = label_encoder.classes_
+        else:
+            # Fallback for very old models
+            all_classes = list(CROP_INFO.keys())
+
+        # Compute display confidences with improved sensitivity (temperature=1.0 instead of 0.85)
+        primary_disp, all_disp = display_confidence_topk(probabilities, k=3, temperature=1.0)
 
         # Build predictions using display (%) for UI
         all_predictions = []
         for i, prob in enumerate(probabilities):
-            crop_name = all_classes[i]
-            all_predictions.append({
-                'crop': crop_name,
-                # use relative confidence for display
-                'confidence': all_disp[i]
-            })
+            if i < len(all_classes):
+                crop_name = all_classes[i]
+                all_predictions.append({
+                    'crop': crop_name,
+                    'confidence': all_disp[i]  # use relative confidence for display
+                })
 
         # Sort by display confidence descending
         all_predictions.sort(key=lambda x: x['confidence'], reverse=True)
@@ -248,17 +296,17 @@ def predict():
         # Primary + alternatives for the template
         primary_prediction = all_predictions[0]['crop']
         primary_confidence = all_predictions[0]['confidence']  # now relative % (top-k)
-        crop_info = CROP_INFO.get(primary_prediction, {})
+
+        crop_info, _ = get_crop_info_safe(primary_prediction)
         alternative_predictions = all_predictions[1:4]
 
-
-        return render_template('index.html', 
-                               prediction=primary_prediction,
-                               confidence=primary_confidence,
-                               crop_info=crop_info,
-                               alternative_predictions=alternative_predictions,
-                               languages=LANGUAGES,
-                               input_values=input_values_form)
+        return render_template('index.html',
+                             prediction=primary_prediction,
+                             confidence=primary_confidence,
+                             crop_info=crop_info,
+                             alternative_predictions=alternative_predictions,
+                             languages=LANGUAGES,
+                             input_values=input_values_form)
 
     except ValueError:
         return render_template('index.html', error="Please enter valid numeric values.", languages=LANGUAGES)
@@ -269,12 +317,13 @@ def predict():
 def api_predict():
     data = request.get_json(silent=True) or {}
     features = {}
-    
+
     # Require all parameters to be present
     for key in ['N','P','K','temperature','humidity','ph','rainfall']:
         val = data.get(key)
         if val is None or (isinstance(val, str) and not val.strip()):
             return jsonify({'status': 'error', 'message': f'Missing required parameter: {key}'}), 400
+
         try:
             features[key] = float(val)
         except ValueError:
@@ -295,7 +344,7 @@ def api_predict():
         return jsonify({'status': 'error', 'message': 'pH must be between 3-10.'}), 400
     if not (200 <= features['rainfall'] <= 3000):
         return jsonify({'status': 'error', 'message': 'Annual rainfall must be between 200-3000mm.'}), 400
-        
+
     # Clamp values to safe ranges
     features['humidity'] = min(100.0, max(10.0, features['humidity']))
     features['ph'] = min(10.0, max(3.0, features['ph']))
@@ -310,17 +359,28 @@ def api_predict():
     try:
         if hasattr(model, 'predict_proba'):
             probs = model.predict_proba(X)[0]
-            names = list(label_encoder.classes_) if label_encoder is not None else list(getattr(model, 'classes_', []))
-            primary_conf, disp = display_confidence_topk(probs, k=3, temperature=0.85)
+
+            # Get class names with proper fallback
+            if hasattr(model, 'classes_'):
+                names = list(model.classes_)
+            elif crop_labels:
+                names = crop_labels
+            elif label_encoder and hasattr(label_encoder, 'classes_'):
+                names = list(label_encoder.classes_)
+            else:
+                names = list(CROP_INFO.keys())
+
+            # Use improved confidence display (temperature=1.0)
+            primary_conf, disp = display_confidence_topk(probs, k=3, temperature=1.0)
+
             top_idx = int(np.argmax(probs))
-            primary_crop = names[top_idx]
+            primary_crop = names[top_idx] if top_idx < len(names) else 'Unknown'
 
             top3_idx = disp.argsort()[-3:][::-1]
             alts = []
             for i in top3_idx:
-                if names[i] == primary_crop:
-                    continue
-                alts.append({'crop': names[i], 'confidence': round(float(disp[i]), 1)})
+                if i < len(names) and names[i] != primary_crop:
+                    alts.append({'crop': names[i], 'confidence': round(float(disp[i]), 1)})
                 if len(alts) == 2:
                     break
 
@@ -336,12 +396,12 @@ def api_predict():
         else:
             pred = model.predict(X)[0]
             return jsonify({'status':'success','crop': pred,'confidence': 100.0,
-                            'alternatives': [],'environment_data': features,
-                            'location_data': {},'crop_info': {}})
+                          'alternatives': [],'environment_data': features,
+                          'location_data': {},'crop_info': {}})
 
     except Exception as e:
         return jsonify({'status':'error','message': str(e)}), 500
-    
+
 @app.route('/api/chat', methods=['POST'])
 def api_chat():
     try:
@@ -384,12 +444,14 @@ def api_chat():
                 if role in ('user', 'model', 'assistant'):
                     mapped_role = 'user' if role == 'user' else 'model'
                     contents.append({ 'role': mapped_role, 'parts': [content] })
+
         # Inject system guidance at the front
         contents.insert(0, { 'role': 'user', 'parts': [system_prompt] })
         contents.append({ 'role': 'user', 'parts': [user_message] })
 
         response = model.generate_content(contents)
         text = (getattr(response, 'text', None) or '').strip()
+
         if not text and hasattr(response, 'candidates'):
             # Fallback: extract first candidate text
             try:
@@ -404,6 +466,7 @@ def api_chat():
             'status': 'success',
             'reply': text
         })
+
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
@@ -439,24 +502,23 @@ def predict_live():
                 live.update(npk_from_csv)
                 # mark the source so provenance is correct later
                 live['soil_source'] = 'district'
-        else:
-            # make the source explicit when we have nothing
-            live.setdefault('soil_source', 'none')
-
+            else:
+                # make the source explicit when we have nothing
+                live.setdefault('soil_source', 'none')
 
         # Validate and convert all required values
         vals = {}
         required_fields = ['N', 'P', 'K', 'ph', 'temperature', 'humidity', 'rainfall']
-        
+
         for key in required_fields:
             v = live.get(key)
             if v is None:
-                return jsonify({'status': 'error', 
+                return jsonify({'status': 'error',
                               'message': f'Missing required live data: {key}'}), 400
             try:
                 vals[key] = float(v)
             except ValueError:
-                return jsonify({'status': 'error', 
+                return jsonify({'status': 'error',
                               'message': f'Invalid value for {key}: must be a number'}), 400
 
         # Clamp
@@ -469,30 +531,39 @@ def predict_live():
 
         # Feature vector for model (strict order)
         features = np.array([[vals['N'], vals['P'], vals['K'],
-                            vals['temperature'], vals['humidity'],
-                            vals['ph'], vals['rainfall']]], dtype=float)
+                             vals['temperature'], vals['humidity'],
+                             vals['ph'], vals['rainfall']]], dtype=float)
 
         # Predict class + probabilities
         probs = model.predict_proba(features)[0]
-        classes = list(label_encoder.classes_) if label_encoder is not None else list(getattr(model, 'classes_', []))
-        top_idx = int(np.argmax(probs))
-        crop = str(classes[top_idx]) if classes else str(model.predict(features)[0])
 
-        # Farmer-friendly confidence (top-k temperature scaling)
-        primary_disp, disp_vec = display_confidence_topk(probs, k=3, temperature=0.85)
+        # Get class names with proper fallback
+        if hasattr(model, 'classes_'):
+            classes = list(model.classes_)
+        elif crop_labels:
+            classes = crop_labels
+        elif label_encoder and hasattr(label_encoder, 'classes_'):
+            classes = list(label_encoder.classes_)
+        else:
+            classes = list(CROP_INFO.keys())
+
+        top_idx = int(np.argmax(probs))
+        crop = str(classes[top_idx]) if top_idx < len(classes) else str(model.predict(features)[0])
+
+        # Farmer-friendly confidence with improved sensitivity (temperature=1.0)
+        primary_disp, disp_vec = display_confidence_topk(probs, k=3, temperature=1.0)
         conf = round(primary_disp, 1)
 
         # Build two alternatives (excluding primary)
         top3_idx = np.argsort(disp_vec)[-3:][::-1]
         alts = []
         for i in top3_idx:
-            if classes and classes[i] == crop:
-                continue
-            alts.append({'crop': classes[i] if classes else str(i),
-                        'confidence': round(float(disp_vec[i]), 1)})
+            if i < len(classes) and classes[i] != crop:
+                alts.append({'crop': classes[i],
+                            'confidence': round(float(disp_vec[i]), 1)})
             if len(alts) == 2:
                 break
-        
+
         # --- FIX: Look up the crop info using the helper function ---
         crop_info, _ = get_crop_info_safe(crop)
 
@@ -514,18 +585,13 @@ def predict_live():
             # --- FIX: Pass the populated crop_info object ---
             'crop_info': crop_info
         })
-    
+
     except Exception as e:
         try:
             dbg = {'incoming_live': live if 'live' in locals() else None}
         except Exception:
             dbg = None
         return jsonify({'status': 'error', 'message': str(e), 'debug': dbg}), 500
-
-
-
-
-
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
