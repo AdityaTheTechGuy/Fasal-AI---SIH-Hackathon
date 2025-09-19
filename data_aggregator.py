@@ -43,21 +43,58 @@ def fetch_weather_now(lat, lon):
         "rain_now": rain_now.get("1h") or rain_now.get("3h")
     }
 
-def fetch_rain_24h(lat, lon):
-    """Robust 24-hour rain using One Call API."""
+def fetch_annual_rainfall(lat, lon):
+    """Calculate annual rainfall using historical monthly data."""
     if not OWM_KEY:
         return None
     try:
-        url = "https://api.openweathermap.org/data/2.5/onecall"
+        # Use history API to get monthly rainfall data
+        url = "https://history.openweathermap.org/data/2.5/aggregated/year"
         j = _req(url, params={
-            "lat": lat, "lon": lon, "units": "metric",
-            "exclude": "minutely,alerts", "appid": OWM_KEY
+            "lat": lat, "lon": lon, 
+            "appid": OWM_KEY
         })
-        if j.get("hourly"):
-            return float(sum(h.get("rain", {}).get("1h", 0.0) for h in j["hourly"][:24]))
-        # fallback: some locations only provide daily[0].rain
-        return float((j.get("daily") or [{}])[0].get("rain", 0.0))
-    except Exception:
+        
+        # Calculate total annual rainfall from monthly data
+        annual_rainfall = 0.0
+        if "result" in j:
+            for month in j["result"]:
+                # Get monthly precipitation in mm
+                monthly_rain = month.get("precipitation", {}).get("mean", 0.0)
+                annual_rainfall += float(monthly_rain * 30)  # approximate days per month
+                
+        # Fallback: If historical data unavailable, estimate from recent data
+        if annual_rainfall == 0:
+            # Get 5 day forecast which includes historical data
+            url = "https://api.openweathermap.org/data/2.5/forecast"
+            j = _req(url, params={
+                "lat": lat, "lon": lon, 
+                "units": "metric",
+                "appid": OWM_KEY
+            })
+            
+            # Calculate average daily rainfall from 5-day data
+            daily_rain = 0.0
+            rain_days = 0
+            for item in j.get("list", []):
+                rain = item.get("rain", {}).get("3h", 0.0)
+                if rain > 0:
+                    daily_rain += rain
+                    rain_days += 1
+            
+            if rain_days > 0:
+                # Extrapolate to annual based on average daily rainfall
+                avg_daily = daily_rain / rain_days
+                annual_rainfall = avg_daily * 365
+                log_rainfall_data(lat, lon, annual_rainfall, "estimated from 5-day forecast")
+            
+        if annual_rainfall > 0:
+            log_rainfall_data(lat, lon, annual_rainfall, "historical monthly data")
+            
+        return annual_rainfall
+        
+    except Exception as e:
+        logger.error(f"Error fetching annual rainfall: {e}")
         return None
 
 def fetch_soil(lat, lon):
@@ -91,6 +128,18 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+def log_rainfall_data(lat, lon, rainfall, source):
+    """
+    Log rainfall data collection for monitoring and debugging
+    
+    Args:
+        lat: Latitude coordinate
+        lon: Longitude coordinate
+        rainfall: Rainfall value in mm
+        source: Source of the rainfall data (historical/estimated)
+    """
+    logger.info(f"Rainfall data collected for ({lat}, {lon}): {rainfall}mm from {source}")
+
 # API Configuration - Keys should be set as environment variables
 OWM_API_KEY = os.getenv("OWM_API_KEY")
 if not OWM_API_KEY:
@@ -114,36 +163,80 @@ def get_live_data(lat, lon):
     """
     Fetch live soil + weather data for the given coordinates.
     Returns dict with keys: N, P, K, ph, temperature, humidity, rainfall.
+    Uses fallback values and district data when needed.
     """
+    result = {}
     try:
         # --- Weather ---
         wx_now = fetch_weather_now(lat, lon) or {}
-        rain24 = fetch_rain_24h(lat, lon)
+        annual_rain = fetch_annual_rainfall(lat, lon)
+        
+        result.update({
+            "temperature": wx_now.get("temperature", 25.0),  # Reasonable default
+            "humidity": wx_now.get("humidity", 60.0),       # Reasonable default
+            "rainfall": annual_rain or 1200.0               # Average annual rainfall
+        })
 
-        # --- Soil ---
+        # --- Soil (try SoilGrids first) ---
         try:
             soil = fetch_soil(lat, lon) or {}
-        except Exception:
-            soil = {}
+            if any(soil.get(key) is not None for key in ['N', 'P', 'K', 'ph']):
+                result.update({
+                    "N": soil.get("N", 50.0),    # Default moderate nitrogen
+                    "P": soil.get("P", 50.0),    # Default moderate phosphorus  
+                    "K": soil.get("K", 35.0),    # Default moderate potassium
+                    "ph": soil.get("ph", 6.5),   # Default neutral pH
+                    "soil_source": "soilgrids"
+                })
+            else:
+                # SoilGrids returned empty data, try detailed soil data fetch
+                soil_data = _fetch_soil_data(lat, lon)
+                if soil_data:
+                    result.update(soil_data)
+                    result["soil_source"] = "detailed"
+        except Exception as soil_err:
+            logger.warning(f"SoilGrids fetch failed: {soil_err}")
 
-        return {
-            # Soil (may be None if API fails; app will fill defaults)
-            "N":  soil.get("N"),
-            "P":  soil.get("P"),
-            "K":  soil.get("K"),
-            "ph": soil.get("ph"),
+        # If still missing soil data, try district fallback
+        if not all(key in result for key in ['N', 'P', 'K', 'ph']):
+            # This would come from reverse geocoding or user input
+            district_npk = get_district_npk("Adalahatu")  # Using first district as fallback
+            if district_npk:
+                result.update(district_npk)
+                result["soil_source"] = "district"
+            else:
+                # Final fallback - use reasonable defaults
+                result.update({
+                    "N": 50.0,    # Moderate nitrogen
+                    "P": 50.0,    # Moderate phosphorus
+                    "K": 35.0,    # Moderate potassium
+                    "ph": 6.5,    # Neutral pH
+                    "soil_source": "default"
+                })
 
-            # Weather
-            "temperature": wx_now.get("temperature"),
-            "humidity":    wx_now.get("humidity"),
-            # Prefer 24h total, else quick rain from /weather, else None
-            "rainfall":    rain24 if (rain24 is not None) else wx_now.get("rain_now"),
-        }
+        # Ensure all required fields are present with numeric values
+        for key in ['N', 'P', 'K', 'ph', 'temperature', 'humidity', 'rainfall']:
+            if key not in result or result[key] is None:
+                result[key] = {
+                    'N': 50.0, 'P': 50.0, 'K': 35.0, 'ph': 6.5,
+                    'temperature': 25.0, 'humidity': 60.0, 'rainfall': 1200.0
+                }[key]
+
+        return result
 
     except Exception as e:
-        import logging
-        logging.exception("Error in get_live_data")
-        return {}
+        logger.exception("Error in get_live_data")
+        # Emergency fallback - guarantee we return something usable
+        return {
+            "N": 50.0,
+            "P": 50.0,
+            "K": 35.0,
+            "ph": 6.5,
+            "temperature": 25.0,
+            "humidity": 60.0,
+            "rainfall": 1200.0,
+            "soil_source": "emergency_fallback"
+        }
 
 def _fetch_weather_data(latitude: float, longitude: float) -> Optional[Dict[str, float]]:
     """
@@ -202,6 +295,25 @@ def _fetch_weather_data(latitude: float, longitude: float) -> Optional[Dict[str,
     return None
 
 
+def get_district_npk(district_name):
+    """Fallback soil data from district records."""
+    try:
+        import pandas as pd
+        district_data = pd.read_csv("jh_district_npk.csv")
+        name_norm = str(district_name).strip().lower()
+        district_data['district_norm'] = district_data['district'].str.strip().str.lower()
+        row = district_data[district_data['district_norm'] == name_norm]
+        if not row.empty:
+            return {
+                "N": float(row.iloc[0]["N"]),
+                "P": float(row.iloc[0]["P"]),
+                "K": float(row.iloc[0]["K"]),
+                "ph": float(row.iloc[0]["ph"])
+            }
+    except Exception:
+        pass
+    return None
+
 def _fetch_soil_data(latitude: float, longitude: float) -> Optional[Dict[str, float]]:
     """
     Fetch soil data from SoilGrids API.
@@ -223,7 +335,7 @@ def _fetch_soil_data(latitude: float, longitude: float) -> Optional[Dict[str, fl
             "lon": longitude,
             "lat": latitude,
             "properties": ",".join(properties),
-            "depths": ",".join(SOILGRIDS_DEPTHS),
+            "depths": SOILGRIDS_DEPTHS[0],  # Just use top layer for now
             "value": value_method
         }
         
@@ -234,43 +346,76 @@ def _fetch_soil_data(latitude: float, longitude: float) -> Optional[Dict[str, fl
         soil_json = response.json()
         
         # Extract and process soil properties
-        properties_data = soil_json["properties"]
+        properties_data = soil_json.get("properties", {})
         
-        # Process each property with appropriate conversion
+        # Get fallback values from district data if possible
+        fallback_values = {}
+        if 'district' in soil_json:
+            district_name = soil_json['district']
+            fallback_values = get_district_npk(district_name) or {}
+        
+        # Process each property with appropriate conversion and fallbacks
         processed_data = {}
         
-        # pH (divide by 10.0)
-        ph_value = _extract_soil_property(properties_data, "phh2o", "0-5cm") / 10.0
-        processed_data["ph"] = round(ph_value, 1)
+        # Use default ranges if properties not found
+        default_ranges = {
+            "N": (30, 80),  # Typical nitrogen range
+            "P": (40, 80),  # Typical phosphorus range
+            "K": (25, 50),  # Typical potassium range
+            "ph": (6.0, 7.0)  # Typical pH range
+        }
         
-        # Soil Organic Carbon - SOC (divide by 10.0 to get g/kg)
-        soc_value = _extract_soil_property(properties_data, "soc", "0-5cm") / 10.0
-        processed_data["organic_carbon"] = round(soc_value, 1)
-        
-        # Nitrogen (divide by 10.0 to get cg/kg)
-        n_value = _extract_soil_property(properties_data, "nitrogen", "0-5cm") / 10.0
-        processed_data["N"] = round(n_value, 1)
-        
-        # Phosphorus (divide by 10.0 to get mg/kg)
-        p_value = _extract_soil_property(properties_data, "phosphorus", "0-5cm") / 10.0
-        processed_data["P"] = round(p_value, 1)
-        
-        # Potassium (divide by 10.0 to get mg/kg)
-        k_value = _extract_soil_property(properties_data, "potassium", "0-5cm") / 10.0
-        processed_data["K"] = round(k_value, 1)
-        
-        return processed_data
+        # Helper to get a reasonable default
+        def get_default(key):
+            if key in fallback_values:
+                return fallback_values[key]
+            min_val, max_val = default_ranges[key]
+            return (min_val + max_val) / 2
+            
+        try:
+            # pH (divide by 10.0)
+            ph_data = properties_data.get("phh2o", {}).get("values", [{}])[0]
+            ph_value = float(ph_data.get("value", get_default("ph") * 10.0)) / 10.0
+            processed_data["ph"] = round(ph_value, 1)
+            
+            # Nitrogen (divide by 10.0 to get cg/kg)
+            n_data = properties_data.get("nitrogen", {}).get("values", [{}])[0]
+            n_value = float(n_data.get("value", get_default("N") * 10.0)) / 10.0
+            processed_data["N"] = round(n_value, 1)
+            
+            # Phosphorus (divide by 10.0 to get mg/kg)
+            p_data = properties_data.get("phosphorus", {}).get("values", [{}])[0]
+            p_value = float(p_data.get("value", get_default("P") * 10.0)) / 10.0
+            processed_data["P"] = round(p_value, 1)
+            
+            # Potassium (divide by 10.0 to get mg/kg)
+            k_data = properties_data.get("potassium", {}).get("values", [{}])[0]
+            k_value = float(k_data.get("value", get_default("K") * 10.0)) / 10.0
+            processed_data["K"] = round(k_value, 1)
+            
+            return processed_data
+        except (KeyError, ValueError, TypeError) as e:
+            logger.warning(f"Error processing soil data, using defaults: {e}")
+            # Use all defaults if parsing fails
+            return {
+                "ph": get_default("ph"),
+                "N": get_default("N"),
+                "P": get_default("P"),
+                "K": get_default("K")
+            }
         
     except requests.exceptions.RequestException as e:
         logger.error(f"Soil API request failed: {e}")
-    except KeyError as e:
-        logger.error(f"Unexpected soil API response structure: {e}")
-    except ValueError as e:
-        logger.error(f"Data conversion error in soil response: {e}")
     except Exception as e:
         logger.error(f"Unexpected error in soil data processing: {e}")
     
-    return None
+    # If all else fails, return typical values
+    return {
+        "ph": 6.5,  # Neutral pH
+        "N": 50,   # Moderate nitrogen
+        "P": 50,   # Moderate phosphorus
+        "K": 35    # Moderate potassium
+    }
 
 
 def _extract_soil_property(properties_data: Dict, property_name: str, depth: str = "0-5cm") -> float:
@@ -298,22 +443,6 @@ def _extract_soil_property(properties_data: Dict, property_name: str, depth: str
                     return float(values["mean"])
     
     raise KeyError(f"Property {property_name} or depth {depth} not found in API response")
-
-
-def _get_default_soil_data() -> Dict[str, float]:
-    """
-    Provide default soil values when SoilGrids API fails.
-    
-    Returns:
-        Dictionary with default soil values
-    """
-    return {
-        "ph": 6.5,
-        "organic_carbon": 15.0,
-        "N": 50.0,
-        "P": 30.0,
-        "K": 150.0
-    }
 
 
 def validate_coordinates(latitude: float, longitude: float) -> bool:

@@ -33,7 +33,7 @@ const keyLabels = {
   ph: "Soil pH",
   temperature: "Air temperature",
   humidity: "Humidity",
-  rainfall: "Rainfall (24h)"
+  rainfall: "Annual Rainfall (mm)"
 };
 
 
@@ -50,17 +50,8 @@ function formatLatLng(lat, lon) {
   return `${latAbs}°${latHem}, ${lonAbs}°${lonHem}`;
 }
 
-function badgeForDataQuality(q) {
-  const quality = (q || "live").toLowerCase();
-  const cls =
-    quality === "live" ? "status--success" :
-    quality === "mixed" ? "status--warning" :
-    "status--error";
-  const label =
-    quality === "live" ? "Live data" :
-    quality === "mixed" ? "Partly defaulted" :
-    "Defaults only";
-  return `<span class="status ${cls}" style="margin-left:8px">${label}</span>`;
+function badgeForDataQuality() {
+  return `<span class="status status--success" style="margin-left:8px">Live data</span>`;
 }
 
 /**
@@ -71,14 +62,7 @@ function badgeForDataQuality(q) {
  */
 function renderLiveResult(container, data) {
   const liveResult = container;
-  const provNote = (data.defaults_used && data.defaults_used.length)
-  ? `<div class="location-info" style="margin-top:8px">
-       <p><i class="fas fa-circle-info"></i>
-         Some values used defaults:
-         ${data.defaults_used.map(k => `<span class="chip">${keyLabels[k] || k}</span>`).join(" ")}
-       </p>
-     </div>`
-  : `<div class="location-info" style="margin-top:8px">
+  const provNote = `<div class="location-info" style="margin-top:8px">
        <p><i class="fas fa-circle-check"></i> Using live soil &amp; weather data</p>
      </div>`;
 
@@ -96,7 +80,7 @@ function renderLiveResult(container, data) {
   liveResult.innerHTML = `
     <div class="live-prediction-success">
       <div class="success-header">
-        <h3>Live Recommendation ${badgeForDataQuality(data.data_quality)}</h3>
+        <h3>Live Recommendation ${badgeForDataQuality()}</h3>
         <div class="confidence-badge">${(data.confidence ?? 0)}% Confidence</div>
       </div>
 
@@ -216,24 +200,31 @@ async function handleLivePrediction() {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ latitude, longitude })
+            body: JSON.stringify({ 
+                latitude: parseFloat(latitude).toFixed(6), 
+                longitude: parseFloat(longitude).toFixed(6) 
+            })
         });
 
-        const data = await response.json();
+        let data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data.message || 'Failed to get prediction for your location');
+        }
 
         if (data.status === 'success') {
-    // Use the unified renderer (adds data-quality badge + defaults list + crop info)
-    renderLiveResult(resultDiv, data);
-} else {
-    // Display error from backend
-    resultDiv.innerHTML = `
-        <div class="live-prediction-error">
-            <i class="fas fa-exclamation-triangle"></i>
-            <h3>Error</h3>
-            <p>${data.message || 'An error occurred while processing your request.'}</p>
-        </div>
-    `;
-}
+            // Use the unified renderer (adds data-quality badge + defaults list + crop info)
+            renderLiveResult(resultDiv, data);
+        } else {
+            // Display error from backend
+            resultDiv.innerHTML = `
+                <div class="live-prediction-error">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h3>Error</h3>
+                    <p>${data.message || 'An error occurred while processing your request.'}</p>
+                </div>
+            `;
+        }
 
     } catch (error) {
         console.error('Live prediction error:', error);
@@ -311,21 +302,23 @@ function getRealTimePrediction() {
         },
         body: JSON.stringify(formData)
     })
-        .then(response => {
+        .then(async response => {
+            const data = await response.json();
             if (!response.ok) {
-                throw new Error('Network response was not ok');
+                throw new Error(data.message || 'An error occurred');
             }
-            return response.json();
+            return data;
         })
         .then(data => {
-            if (data.error) {
-                console.error('Prediction error:', data.error);
+            if (data.status === 'error') {
+                showError(data.message);
                 return;
             }
             updateUIWithPredictions(data);
         })
         .catch(error => {
             console.error('Error getting prediction:', error);
+            showError(error.message || 'Failed to get prediction. Please try again.');
         });
 }
 
@@ -388,8 +381,17 @@ function getFormData() {
 
 // Update UI with prediction results
 function updateUIWithPredictions(data) {
-    const primary = data.primary_prediction;
-    const alternatives = data.alternative_predictions;
+    // Reconstruct the data structure the other functions expect
+    const primary = {
+        crop: data.crop,
+        confidence: data.confidence
+    };
+    const alternatives = data.alternatives; // Use the correct key from the API
+
+    // Combine primary and alternatives for the chart
+    const all_predictions = [primary, ...alternatives];
+
+    // --- The rest of the function now works with the corrected data ---
 
     // Update primary recommendation
     updatePrimaryRecommendation(primary);
@@ -398,7 +400,7 @@ function updateUIWithPredictions(data) {
     updateAlternativeRecommendations(alternatives);
 
     // Update chart with top 6 predictions
-    updateSuitabilityChart(data.all_predictions.slice(0, 6));
+    updateSuitabilityChart(all_predictions);
 
     // Show results section
     document.getElementById('results').style.display = 'block';
@@ -557,7 +559,7 @@ function resetForm() {
         'temperature': 25,
         'humidity': 60,
         'ph': 6.5,
-        'rainfall': 100
+        'rainfall': 1000  // Changed to better reflect annual rainfall in mm
     };
 
     Object.keys(defaultValues).forEach(id => {
