@@ -4,27 +4,51 @@
 const cropDatabase = {
     "Rice": { name: "Rice", season: "Kharif (June-November)", water_req: "High (1200-2500mm)", soil_type: "Clay loam, well-drained", tips: "Ensure proper water management and pest control for diseases like blast and brown spot.", icon: "🌾" },
     "Maize": { name: "Maize", season: "Kharif/Rabi (April-July, October-January)", water_req: "Medium (500-800mm)", soil_type: "Well-drained loamy soil", tips: "Apply balanced fertilizers and control stem borer and fall armyworm.", icon: "🌽" },
-    "Chickpea": { name: "Chickpea", season: "Rabi (October-April)", water_req: "Low (300-400mm)", soil_type: "Well-drained, neutral pH", tips: "Drought tolerant crop, avoid waterlogging and control pod borer.", icon: "🫘" },
-    "Cotton": { name: "Cotton", season: "Kharif (May-November)", water_req: "Medium (700-1200mm)", soil_type: "Deep, well-drained black soil", tips: "Monitor for bollworm attacks and ensure adequate potash supply.", icon: "🌱" },
+    "Chickpea": { name: "Chickpea", season: "Rabi (October-April)", water_req: "Low (300-400mm)", soil_type: "Well-drained, neutral pH", tips: "Drought tolerant crop, avoid waterlogging and control pod borer.", icon: "🧆" },
+    "Cotton": { name: "Cotton", season: "Kharif (May-November)", water_req: "Medium (700-1200mm)", soil_type: "Deep, well-drained black soil", tips: "Monitor for bollworm attacks and ensure adequate potash supply.", icon: "🧶" },
     "Apple": { name: "Apple", season: "Perennial (Harvest: September-November)", water_req: "Medium (1000-1200mm)", soil_type: "Well-drained, slightly acidic", tips: "Requires cold winters for dormancy. Prune regularly and control scab disease.", icon: "🍎" },
     "Banana": { name: "Banana", season: "Year-round planting", water_req: "High (1500-1800mm)", soil_type: "Rich, well-drained loamy soil", tips: "High potassium requirement. Protect from strong winds and control nematodes.", icon: "🍌" },
-    "Coffee": { name: "Coffee", season: "Perennial (Harvest: December-February)", water_req: "Medium (1500-2000mm)", soil_type: "Well-drained, slightly acidic", tips: "Shade-grown crop. Control coffee berry borer and leaf rust disease.", icon: "☕" },
-    "Kidneybeans": { name: "Kidneybeans", season: "Rabi (October-March)", water_req: "Medium (400-500mm)", soil_type: "Well-drained loamy soil", tips: "Avoid waterlogging and ensure proper nitrogen fixation.", icon: "🫘" },
+    "Coffee": { name: "Coffee", season: "Perennial (Harvest: December-February)", water_req: "Medium (1500-2000mm)", soil_type: "Well-drained, slightly acidic", tips: "Shade-grown crop. Control coffee berry borer and leaf rust disease.", icon: "☕️" },
+    "Kidneybeans": { name: "Kidneybeans", season: "Rabi (October-March)", water_req: "Medium (400-500mm)", soil_type: "Well-drained loamy soil", tips: "Avoid waterlogging and ensure proper nitrogen fixation.", icon: "🌰" },
     "Pigeonpeas": { name: "Pigeonpeas", season: "Kharif (June-December)", water_req: "Medium (600-650mm)", soil_type: "Well-drained sandy loam", tips: "Drought tolerant, good for intercropping systems.", icon: "🫛" },
-    "Mothbeans": { name: "Mothbeans", season: "Kharif (July-October)", water_req: "Low (300-400mm)", soil_type: "Sandy, drought-prone areas", tips: "Highly drought tolerant, suitable for arid regions.", icon: "🫘" },
-    "Mungbean": { name: "Mungbean", season: "Kharif/Summer (March-June, July-October)", water_req: "Medium (400-500mm)", soil_type: "Well-drained sandy loam", tips: "Short duration crop, good for crop rotation.", icon: "🫛" },
-    "Blackgram": { name: "Blackgram", season: "Kharif/Rabi (June-September, October-January)", water_req: "Medium (400-500mm)", soil_type: "Well-drained loamy soil", tips: "Sensitive to waterlogging, ensure good drainage.", icon: "🫘" },
-    "Lentil": { name: "Lentil", season: "Rabi (October-April)", water_req: "Low (300-400mm)", soil_type: "Well-drained sandy loam", tips: "Cold tolerant, avoid excessive moisture during flowering.", icon: "🫛" },
-    "Pomegranate": { name: "Pomegranate", season: "Year-round (Peak: October-February)", water_req: "Medium (500-700mm)", soil_type: "Well-drained, slightly alkaline", tips: "Drought tolerant once established, prune regularly.", icon: "🍎" },
+    "Mothbeans": { name: "Mothbeans", season: "Kharif (July-October)", water_req: "Low (300-400mm)", soil_type: "Sandy, drought-prone areas", tips: "Highly drought tolerant, suitable for arid regions.", icon: "🟫" },
+    "Mungbean": { name: "Mungbean", season: "Kharif/Summer (March-June, July-October)", water_req: "Medium (400-500mm)", soil_type: "Well-drained sandy loam", tips: "Short duration crop, good for crop rotation.", icon: "🟢" },
+    "Blackgram": { name: "Blackgram", season: "Kharif/Rabi (June-September, October-January)", water_req: "Medium (400-500mm)", soil_type: "Well-drained loamy soil", tips: "Sensitive to waterlogging, ensure good drainage.", icon: "⚫" },
+    "Lentil": { name: "Lentil", season: "Rabi (October-April)", water_req: "Low (300-400mm)", soil_type: "Well-drained sandy loam", tips: "Cold tolerant, avoid excessive moisture during flowering.", icon: "🟠" },
+    "Pomegranate": { name: "Pomegranate", season: "Year-round (Peak: October-February)", water_req: "Medium (500-700mm)", soil_type: "Well-drained, slightly alkaline", tips: "Drought tolerant once established, prune regularly.", icon: "🍒" },
     "Mango": { name: "Mango", season: "Perennial (Harvest: April-July)", water_req: "Medium (750-1200mm)", soil_type: "Well-drained, deep soil", tips: "Avoid waterlogging during flowering, control fruit fly.", icon: "🥭" },
     "Grapes": { name: "Grapes", season: "Perennial (Harvest: February-April)", water_req: "Medium (500-700mm)", soil_type: "Well-drained, slightly alkaline", tips: "Requires pruning and trellising, control powdery mildew.", icon: "🍇" },
     "Watermelon": { name: "Watermelon", season: "Summer (February-May)", water_req: "Medium (400-600mm)", soil_type: "Sandy loam, well-drained", tips: "Requires warm weather, control fruit fly and aphids.", icon: "🍉" },
     "Muskmelon": { name: "Muskmelon", season: "Summer (February-May)", water_req: "Medium (300-500mm)", soil_type: "Sandy loam, well-drained", tips: "Warm season crop, ensure adequate potash supply.", icon: "🍈" },
     "Orange": { name: "Orange", season: "Perennial (Harvest: December-February)", water_req: 'Medium (1000-1200mm)', soil_type: "Well-drained, slightly acidic", tips: "Regular irrigation needed, control citrus canker.", icon: "🍊" },
-    "Papaya": { name: "Papaya", season: "Year-round planting", water_req: "High (1200-1500mm)", soil_type: "Well-drained, rich organic matter", tips: "Avoid waterlogging, control papaya ring spot virus.", icon: "🍈" },
+    "Papaya": { name: "Papaya", season: "Year-round planting", water_req: "High (1200-1500mm)", soil_type: "Well-drained, rich organic matter", tips: "Avoid waterlogging, control papaya ring spot virus.", icon: "🥝" },
     "Coconut": { name: "Coconut", season: "Year-round planting", water_req: "High (1500-2000mm)", soil_type: "Coastal sandy soil", tips: "High potash requirement, control rhinoceros beetle.", icon: "🥥" },
-    "Jute": { name: "Jute", season: "Kharif (April-August)", water_req: "High (1000-1500mm)", soil_type: "Alluvial soil with high moisture", tips: "Requires high humidity, harvest at proper maturity.", icon: "🌾" }
+    "Jute": { name: "Jute", season: "Kharif (April-August)", water_req: "High (1000-1500mm)", soil_type: "Alluvial soil with high moisture", tips: "Requires high humidity, harvest at proper maturity.", icon: "🧵" }
 };
+
+// Case-insensitive lookup for crop entries
+function findCropEntry(name) {
+    if (!name) return null;
+    const exact = cropDatabase[name];
+    if (exact) return exact;
+    const lower = String(name).toLowerCase();
+    for (const key of Object.keys(cropDatabase)) {
+        if (key.toLowerCase() === lower) return cropDatabase[key];
+    }
+    // Try singular/plural simple fix (remove/add trailing 's')
+    if (lower.endsWith('s')) {
+        const singular = lower.slice(0, -1);
+        for (const key of Object.keys(cropDatabase)) {
+            if (key.toLowerCase() === singular) return cropDatabase[key];
+        }
+    } else {
+        const plural = lower + 's';
+        for (const key of Object.keys(cropDatabase)) {
+            if (key.toLowerCase() === plural) return cropDatabase[key];
+        }
+    }
+    return null;
+}
 
 const keyLabels = {
   N: "Nitrogen (N)",
@@ -72,9 +96,8 @@ function renderLiveResult(container, data) {
   const lat = data.location_data?.latitude;
   const lon = data.location_data?.longitude;
 
-  // pick icon from your local database when possible
-  const icon = (cropDatabase[crop] && cropDatabase[crop].icon) ? cropDatabase[crop].icon : "🌱";
-
+  const db = findCropEntry(crop) || {};
+  const icon = db.icon || "🌱";
 
   liveResult.classList.add("active");
   liveResult.innerHTML = `
@@ -409,7 +432,7 @@ function updateUIWithPredictions(data) {
 
 // Update primary recommendation display
 function updatePrimaryRecommendation(prediction) {
-    const crop = cropDatabase[prediction.crop] || {
+    const entry = findCropEntry(prediction.crop) || {
         name: prediction.crop,
         season: 'Season information not available',
         water_req: 'Water requirement not available',
@@ -418,12 +441,13 @@ function updatePrimaryRecommendation(prediction) {
         icon: '🌱'
     };
 
-    document.getElementById('primary-crop-icon').textContent = crop.icon;
-    document.getElementById('primary-crop-name').textContent = crop.name;
-    document.getElementById('primary-crop-season').textContent = crop.season;
-    document.getElementById('primary-crop-water').textContent = crop.water_req;
-    document.getElementById('primary-crop-soil').textContent = crop.soil_type;
-    document.getElementById('primary-crop-tips').textContent = crop.tips;
+    const iconContainer = document.getElementById('primary-crop-icon');
+    iconContainer.textContent = entry.icon;
+    document.getElementById('primary-crop-name').textContent = entry.name;
+    document.getElementById('primary-crop-season').textContent = entry.season;
+    document.getElementById('primary-crop-water').textContent = entry.water_req;
+    document.getElementById('primary-crop-soil').textContent = entry.soil_type;
+    document.getElementById('primary-crop-tips').textContent = entry.tips;
     document.getElementById('primary-confidence').textContent = Math.round(prediction.confidence) + '%';
 }
 
@@ -433,7 +457,7 @@ function updateAlternativeRecommendations(alternatives) {
     container.innerHTML = '';
 
     alternatives.forEach(alt => {
-        const crop = cropDatabase[alt.crop] || {
+        const entry = findCropEntry(alt.crop) || {
             name: alt.crop,
             season: 'Season information not available',
             icon: '🌱'
@@ -445,10 +469,10 @@ function updateAlternativeRecommendations(alternatives) {
         const altElement = document.createElement('div');
         altElement.className = 'alternative-crop';
         altElement.innerHTML = `
-            <div class="alternative-crop-icon">${crop.icon}</div>
-            <h4>${crop.name}</h4>
+            <div class="alternative-crop-icon">${entry.icon}</div>
+            <h4>${entry.name}</h4>
             <div class="alternative-confidence ${confidenceClass}">${confidence}% Match</div>
-            <p>${crop.season}</p>
+            <p>${entry.season}</p>
         `;
 
         container.appendChild(altElement);
@@ -690,5 +714,12 @@ function setupChatbot() {
         messages.appendChild(div);
         messages.scrollTop = messages.scrollHeight;
         return div;
+    }
+}
+
+function scrollToForm() {
+    const el = document.getElementById('input-form');
+    if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 }
