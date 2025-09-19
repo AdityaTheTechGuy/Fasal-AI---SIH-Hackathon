@@ -1,4 +1,4 @@
-/* Modern Light Theme CSS for Crop Recommendation System */
+/* Modern Light Theme CSS for Crop Recommendation System with Logo Integration */
 
 :root {
   /* Modern Light Theme Colors */
@@ -321,6 +321,71 @@ a:hover {
   z-index: 1;
 }
 
+/* Hero Logo Styles */
+.hero-logo {
+  max-width: 160px;
+  height: auto;
+  display: block;
+  margin: 0 2rem 0 0;  /* Space right if used horizontally with text */
+  filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.2));
+  border-radius: 1rem; /* Rounded corners */
+  background: rgba(255,255,255,0.15); /* Subtle translucent bg */
+  padding: 0.85rem;
+}
+
+/* Put this where your hero text/content exists */
+.hero-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* Arrange logo and main text horizontally on wide screens */
+.hero-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* On tablet/mobile, stack vertically and center */
+@media (max-width: 768px) {
+  .hero-logo {
+    max-width: 120px;
+    margin: 0 0 1rem 0;
+  }
+  .hero-content {
+    flex-direction: column;
+    text-align: center;
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-logo {
+    max-width: 100px;
+    margin: 0 0 1rem 0;
+  }
+}
+
+
+
+.hero-logo:hover {
+  transform: scale(1.05);
+  filter: brightness(1.2) contrast(1.1);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+@keyframes logoFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 .hero-text h1 {
   font-size: 3.5rem;
   font-weight: 700;
@@ -332,11 +397,7 @@ a:hover {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-}
-
-.hero-text h1 i {
-  color: #10B981;
-  font-size: 3rem;
+  flex-wrap: wrap;
 }
 
 .hero-text h2 {
@@ -981,6 +1042,111 @@ a:hover {
   line-height: 1.4;
 }
 
+/* Responsive Design - Logo Adjustments */
+@media (max-width: 768px) {
+  .hero-logo {
+    height: 45px;
+    margin-right: var(--space-2);
+    padding: var(--space-1);
+  }
+
+  .hero-content {
+    grid-template-columns: 1fr;
+    text-align: center;
+    gap: var(--space-8);
+  }
+
+  .hero-text h1 {
+    font-size: 2.5rem;
+    justify-content: center;
+  }
+
+  .hero-stats {
+    grid-template-columns: 1fr;
+    gap: var(--space-3);
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .primary-crop-content {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .crop-info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .input-group {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-3);
+  }
+
+  .number-input {
+    width: 100%;
+  }
+
+  .live-prediction-content {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .alternative-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .education-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .container {
+    padding: 0 var(--space-3);
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-logo {
+    height: 35px;
+    margin-right: var(--space-2);
+  }
+
+  .hero {
+    padding: var(--space-12) 0 var(--space-10);
+  }
+
+  .input-section, 
+  .results-section, 
+  .education-section {
+    padding: var(--space-12) 0;
+  }
+
+  .hero-text h1 {
+    font-size: 2rem;
+    flex-direction: column;
+    gap: var(--space-2);
+    text-align: center;
+  }
+
+  .hero-text h2 {
+    font-size: 1.25rem;
+  }
+
+  .stat-card {
+    padding: var(--space-3);
+  }
+
+  .stat-card h3 {
+    font-size: 1.5rem;
+  }
+
+  .parameter-card {
+    padding: var(--space-4);
+  }
+}
+
 /* Utility Classes */
 .text-center { text-align: center; }
 .text-left { text-align: left; }
@@ -1098,97 +1264,6 @@ a:hover {
 
 .slideIn {
   animation: slideIn 0.6s ease-out;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-  .hero-content {
-    grid-template-columns: 1fr;
-    text-align: center;
-    gap: var(--space-8);
-  }
-
-  .hero-text h1 {
-    font-size: 2.5rem;
-    justify-content: center;
-  }
-
-  .hero-stats {
-    grid-template-columns: 1fr;
-    gap: var(--space-3);
-  }
-
-  .form-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .primary-crop-content {
-    grid-template-columns: 1fr;
-    text-align: center;
-  }
-
-  .crop-info-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .input-group {
-    flex-direction: column;
-    align-items: stretch;
-    gap: var(--space-3);
-  }
-
-  .number-input {
-    width: 100%;
-  }
-
-  .live-prediction-content {
-    grid-template-columns: 1fr;
-    text-align: center;
-  }
-
-  .alternative-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .education-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .container {
-    padding: 0 var(--space-3);
-  }
-}
-
-@media (max-width: 480px) {
-  .hero {
-    padding: var(--space-12) 0 var(--space-10);
-  }
-
-  .input-section, 
-  .results-section, 
-  .education-section {
-    padding: var(--space-12) 0;
-  }
-
-  .hero-text h1 {
-    font-size: 2rem;
-  }
-
-  .hero-text h2 {
-    font-size: 1.25rem;
-  }
-
-  .stat-card {
-    padding: var(--space-3);
-  }
-
-  .stat-card h3 {
-    font-size: 1.5rem;
-  }
-
-  .parameter-card {
-    padding: var(--space-4);
-  }
 }
 
 /* Focus Styles for Accessibility */
