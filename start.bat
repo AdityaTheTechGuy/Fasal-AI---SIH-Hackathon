@@ -61,7 +61,10 @@ if %errorlevel% neq 0 (
 echo.
 echo =============================================================
 echo [INFO] Starting the Fasal AI application...
-echo You can access the app at http://127.0.0.1:5000
+if "%PORT%"=="" set PORT=5000
+if "%FLASK_SECRET_KEY%"=="" set FLASK_SECRET_KEY=dev-key
+if "%GEMINI_API_KEY%"=="" set GEMINI_API_KEY=AIzaSyDUcStsKHm-BZ4hvf6O9vdDdKjHaxgv1iQ
+echo You can access the app at http://127.0.0.1:%PORT%
 echo Press CTRL+C in this window to stop the server.
 echo =============================================================
 echo.

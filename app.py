@@ -342,6 +342,71 @@ def api_predict():
     except Exception as e:
         return jsonify({'status':'error','message': str(e)}), 500
     
+@app.route('/api/chat', methods=['POST'])
+def api_chat():
+    try:
+        data = request.get_json(silent=True) or {}
+        user_message = (data.get('message') or '').strip()
+        history = data.get('history') or []  # optional: list of {role, content}
+
+        if not user_message:
+            return jsonify({'status': 'error', 'message': 'Message is required.'}), 400
+
+        # Configure Gemini client
+        try:
+            import google.generativeai as genai
+        except Exception as e:
+            return jsonify({'status': 'error', 'message': 'Gemini client not installed. Please install google-generativeai.', 'detail': str(e)}), 500
+
+        gemini_api_key = os.environ.get('GEMINI_API_KEY') or 'AIzaSyDUcStsKHm-BZ4hvf6O9vdDdKjHaxgv1iQ'
+        if not gemini_api_key:
+            return jsonify({'status': 'error', 'message': 'GEMINI_API_KEY is not configured.'}), 500
+
+        genai.configure(api_key=gemini_api_key)
+
+        # Prepare a system prompt to keep answers on agriculture domain
+        system_prompt = (
+            "You are FasalAI, an assistant for farmers. Provide concise, helpful answers "
+            "about crops, soil, weather, irrigation, pests, and best practices for Indian agriculture. "
+            "If asked unrelated questions, briefly respond and guide back to farming context."
+        )
+
+        model = genai.GenerativeModel('gemini-1.5-flash')
+
+        # Build messages: optional history, then system + user
+        contents = []
+        if isinstance(history, list):
+            for turn in history[-10:]:
+                role = (turn.get('role') or '').lower()
+                content = (turn.get('content') or '').strip()
+                if not content:
+                    continue
+                if role in ('user', 'model', 'assistant'):
+                    mapped_role = 'user' if role == 'user' else 'model'
+                    contents.append({ 'role': mapped_role, 'parts': [content] })
+        # Inject system guidance at the front
+        contents.insert(0, { 'role': 'user', 'parts': [system_prompt] })
+        contents.append({ 'role': 'user', 'parts': [user_message] })
+
+        response = model.generate_content(contents)
+        text = (getattr(response, 'text', None) or '').strip()
+        if not text and hasattr(response, 'candidates'):
+            # Fallback: extract first candidate text
+            try:
+                text = (response.candidates[0].content.parts[0].text or '').strip()
+            except Exception:
+                text = ''
+
+        if not text:
+            return jsonify({'status': 'error', 'message': 'No response from model.'}), 502
+
+        return jsonify({
+            'status': 'success',
+            'reply': text
+        })
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
 @app.route('/predict_live', methods=['POST'])
 def predict_live():
     try:

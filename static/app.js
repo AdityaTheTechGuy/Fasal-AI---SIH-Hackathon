@@ -125,6 +125,7 @@ document.addEventListener('DOMContentLoaded', function () {
     setupEventListeners();
     initializeRealTimePredictions();
     setupLivePrediction();
+    setupChatbot();
 });
 
 // Initialize all sliders and input synchronization
@@ -619,5 +620,75 @@ function shareResults() {
     } else {
         // Fallback for browsers that don't support Web Share API
         alert('Share this recommendation: ' + primaryCrop + ' with ' + confidence + ' confidence!');
+    }
+}
+
+// ---------------- Chatbot -----------------
+function setupChatbot() {
+    const toggle = document.getElementById('chat-toggle');
+    const panel = document.getElementById('chat-panel');
+    const closeBtn = document.getElementById('chat-close');
+    const form = document.getElementById('chat-form');
+    const input = document.getElementById('chat-input');
+    const messages = document.getElementById('chat-messages');
+
+    if (!toggle || !panel || !closeBtn || !form || !input || !messages) return;
+
+    function openChat() {
+        panel.style.display = 'flex';
+        panel.setAttribute('aria-hidden', 'false');
+        input.focus();
+        if (messages.childElementCount === 0) {
+            addBotMessage('Hi! I\'m FasalAI. Ask me about crops, soil, weather, pests, and best practices.');
+        }
+    }
+    function closeChat() {
+        panel.style.display = 'none';
+        panel.setAttribute('aria-hidden', 'true');
+    }
+
+    toggle.addEventListener('click', openChat);
+    closeBtn.addEventListener('click', closeChat);
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const text = input.value.trim();
+        if (!text) return;
+        addUserMessage(text);
+        input.value = '';
+        const typing = addBotMessage('<i class="fas fa-ellipsis-h fa-bounce"></i>');
+        try {
+            const res = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: text })
+            });
+            const data = await res.json();
+            typing.remove();
+            if (!res.ok || data.status !== 'success') {
+                addBotMessage(data.message || 'Sorry, something went wrong.');
+                return;
+            }
+            addBotMessage(data.reply);
+        } catch (err) {
+            typing.remove();
+            addBotMessage('Network error. Please try again.');
+        }
+    });
+
+    function addUserMessage(text) {
+        const div = document.createElement('div');
+        div.className = 'chat-msg user';
+        div.textContent = text;
+        messages.appendChild(div);
+        messages.scrollTop = messages.scrollHeight;
+    }
+    function addBotMessage(html) {
+        const div = document.createElement('div');
+        div.className = 'chat-msg bot';
+        div.innerHTML = html;
+        messages.appendChild(div);
+        messages.scrollTop = messages.scrollHeight;
+        return div;
     }
 }

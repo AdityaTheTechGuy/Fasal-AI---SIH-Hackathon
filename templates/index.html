@@ -388,6 +388,39 @@
         </div>
     </footer>
 
+    <!-- Chatbot Widget -->
+    <div id="chatbot" class="chatbot">
+        <button id="chat-toggle" class="chat-toggle" aria-label="Open chat">
+            <i class="fas fa-comments"></i>
+        </button>
+        <div id="chat-panel" class="chat-panel" aria-live="polite" aria-hidden="true">
+            <div class="chat-header">
+                <div class="chat-title"><i class="fas fa-seedling"></i> FasalAI Assistant</div>
+                <button id="chat-close" class="chat-close" aria-label="Close chat">&times;</button>
+            </div>
+            <div id="chat-messages" class="chat-messages"></div>
+            <form id="chat-form" class="chat-input" autocomplete="off">
+                <input id="chat-input" type="text" placeholder="Ask about crops, soil, pests..." aria-label="Chat input" required>
+                <button type="submit" class="btn btn--primary"><i class="fas fa-paper-plane"></i></button>
+            </form>
+        </div>
+    </div>
+
+    <style>
+    .chatbot{position:fixed;right:16px;bottom:16px;z-index:1000}
+    .chat-toggle{width:56px;height:56px;border-radius:50%;border:none;background:#1FB8CD;color:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.2);cursor:pointer;font-size:22px}
+    .chat-panel{position:fixed;right:16px;bottom:84px;width:320px;max-height:60vh;background:#fff;border:1px solid #e5e7eb;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.15);display:none;flex-direction:column;overflow:hidden}
+    .chat-header{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:#f8fafc;border-bottom:1px solid #e5e7eb}
+    .chat-title{font-weight:600}
+    .chat-close{background:transparent;border:none;font-size:20px;cursor:pointer}
+    .chat-messages{padding:10px;overflow:auto;max-height:42vh;display:flex;flex-direction:column;gap:8px}
+    .chat-msg{padding:8px 10px;border-radius:10px;max-width:85%}
+    .chat-msg.user{align-self:flex-end;background:#e0f7fa}
+    .chat-msg.bot{align-self:flex-start;background:#f1f5f9}
+    .chat-input{display:flex;gap:8px;padding:10px;border-top:1px solid #e5e7eb}
+    .chat-input input{flex:1;padding:8px 10px;border:1px solid #e5e7eb;border-radius:8px}
+    </style>
+
     <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
 
