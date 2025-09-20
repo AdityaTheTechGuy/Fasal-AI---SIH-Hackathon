@@ -51,56 +51,72 @@ function findCropEntry(name) {
 }
 
 const keyLabels = {
-  N: "Nitrogen (N)",
-  P: "Phosphorus (P)",
-  K: "Potassium (K)",
-  ph: "Soil pH",
-  temperature: "Air temperature",
-  humidity: "Humidity",
-  rainfall: "Annual Rainfall (mm)"
+    N: "Nitrogen (N)",
+    P: "Phosphorus (P)",
+    K: "Potassium (K)",
+    ph: "Soil pH",
+    temperature: "Air temperature",
+    humidity: "Humidity",
+    rainfall: "Annual Rainfall (mm)"
 };
 
 
 let suitabilityChart = null;
 let predictionTimeout = null;
 
+// Add event listeners when the document is ready
+document.addEventListener('DOMContentLoaded', function () {
+    // Hide any error messages on page load
+    const errorMessage = document.getElementById('error-message');
+    if (errorMessage) {
+        errorMessage.style.display = 'none';
+    }
+
+    // Initialize application features
+    initializeSliders();
+    setupEventListeners();
+    initializeRealTimePredictions();
+    setupLivePrediction();
+    setupChatbot();
+});
+
 // --- Helpers for live recommendation UI -----------------------------
 
 function formatLatLng(lat, lon) {
-  const latAbs = Math.abs(Number(lat)).toFixed(4);
-  const lonAbs = Math.abs(Number(lon)).toFixed(4);
-  const latHem = Number(lat) >= 0 ? "N" : "S";
-  const lonHem = Number(lon) >= 0 ? "E" : "W";
-  return `${latAbs}°${latHem}, ${lonAbs}°${lonHem}`;
+    const latAbs = Math.abs(Number(lat)).toFixed(4);
+    const lonAbs = Math.abs(Number(lon)).toFixed(4);
+    const latHem = Number(lat) >= 0 ? "N" : "S";
+    const lonHem = Number(lon) >= 0 ? "E" : "W";
+    return `${latAbs}°${latHem}, ${lonAbs}°${lonHem}`;
 }
 
 function badgeForDataQuality() {
-  return `<span class="status status--success" style="margin-left:8px">${(window.I18N && window.I18N.live_data_badge) || 'Live data'}</span>`;
+    return `<span class="status status--success" style="margin-left:8px">${(window.I18N && window.I18N.live_data_badge) || 'Live data'}</span>`;
 }
 
 /**
  * Renders the entire Live result card.
  * Expects payload from /predict_live with:
- *  crop, confidence, crop_info{season,water_req,soil_type,tips},
- *  data_quality, defaults_used[], location_data{latitude,longitude}
+ * crop, confidence, crop_info{season,water_req,soil_type,tips},
+ * data_quality, defaults_used[], location_data{latitude,longitude}
  */
 function renderLiveResult(container, data) {
-  const liveResult = container;
-  const provNote = `<div class="location-info" style="margin-top:8px">
+    const liveResult = container;
+    const provNote = `<div class="location-info" style="margin-top:8px">
        <p><i class="fas fa-circle-check"></i> ${(window.I18N && window.I18N.using_live_data_note) || 'Using live soil &amp; weather data'}</p>
      </div>`;
 
 
-  const crop = data.crop || "—";
-  const ci = data.crop_info || {};
-  const lat = data.location_data?.latitude;
-  const lon = data.location_data?.longitude;
+    const crop = data.crop || "—";
+    const ci = data.crop_info || {};
+    const lat = data.location_data?.latitude;
+    const lon = data.location_data?.longitude;
 
-  const db = findCropEntry(crop) || {};
-  const icon = db.icon || "🌱";
+    const db = findCropEntry(crop) || {};
+    const icon = db.icon || "🌱";
 
-  liveResult.classList.add("active");
-  liveResult.innerHTML = `
+    liveResult.classList.add("active");
+    liveResult.innerHTML = `
     <div class="live-prediction-success">
       <div class="success-header">
         <h3>${(window.I18N && window.I18N.live_recommendation) || 'Live Recommendation'} ${badgeForDataQuality()}</h3>
@@ -140,17 +156,6 @@ function renderLiveResult(container, data) {
   `;
 }
 
-
-
-// Initialize the application
-document.addEventListener('DOMContentLoaded', function () {
-    initializeSliders();
-    setupEventListeners();
-    initializeRealTimePredictions();
-    setupLivePrediction();
-    setupChatbot();
-});
-
 // Initialize all sliders and input synchronization
 function initializeSliders() {
     const parameters = ['nitrogen', 'phosphorus', 'potassium', 'temperature', 'humidity', 'ph', 'rainfall'];
@@ -172,7 +177,7 @@ function initializeSliders() {
                 const min = parseFloat(slider.min);
                 const max = parseFloat(slider.max);
 
-                if (value >= min && value <= max) {
+                if (!isNaN(value) && value >= min && value <= max) {
                     slider.value = value;
                     scheduleRealTimePrediction();
                 }
@@ -224,20 +229,20 @@ async function handleLivePrediction() {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ 
-                latitude: parseFloat(latitude).toFixed(6), 
-                longitude: parseFloat(longitude).toFixed(6) 
+            body: JSON.stringify({
+                latitude: parseFloat(latitude).toFixed(6),
+                longitude: parseFloat(longitude).toFixed(6)
             })
         });
 
         let data = await response.json();
-        
+
         if (!response.ok) {
             throw new Error(data.message || 'Failed to get prediction for your location');
         }
 
         if (data.status === 'success') {
-            // Use the unified renderer (adds data-quality badge + defaults list + crop info)
+            // Use the unified renderer
             renderLiveResult(resultDiv, data);
         } else {
             // Display error from backend
@@ -251,7 +256,6 @@ async function handleLivePrediction() {
         }
 
     } catch (error) {
-        console.error('Live prediction error:', error);
         resultDiv.innerHTML = `
             <div class="live-prediction-error">
                 <i class="fas fa-exclamation-triangle"></i>
@@ -271,10 +275,10 @@ function getCurrentPosition() {
         }
 
         navigator.geolocation.getCurrentPosition(
-            resolve, 
+            resolve,
             (error) => {
                 let errorMessage;
-                switch(error.code) {
+                switch (error.code) {
                     case error.PERMISSION_DENIED:
                         errorMessage = (window.I18N && window.I18N.geolocation_denied) || 'Location access was denied. Please enable location permissions.';
                         break;
@@ -300,14 +304,36 @@ function getCurrentPosition() {
 
 // Initialize real-time predictions
 function initializeRealTimePredictions() {
-    // Initial prediction on page load
-    scheduleRealTimePrediction();
+    // Get all input sliders
+    const sliders = document.querySelectorAll('input[type="range"]');
+
+    // Add event listeners to all sliders
+    sliders.forEach(slider => {
+        slider.addEventListener('input', () => {
+            // Update display value if there's a corresponding display element
+            const displayId = slider.getAttribute('data-display');
+            if (displayId) {
+                const displayEl = document.getElementById(displayId);
+                if (displayEl) {
+                    displayEl.textContent = slider.value;
+                }
+            }
+            // Schedule prediction update
+            scheduleRealTimePrediction();
+        });
+    });
 }
 
 // Schedule real-time prediction with debouncing
 function scheduleRealTimePrediction() {
     if (predictionTimeout) {
         clearTimeout(predictionTimeout);
+    }
+
+    // Hide any existing error messages
+    const errorMessage = document.getElementById('error-message');
+    if (errorMessage) {
+        errorMessage.style.display = 'none';
     }
 
     predictionTimeout = setTimeout(() => {
@@ -319,6 +345,12 @@ function scheduleRealTimePrediction() {
 function getRealTimePrediction() {
     const formData = getFormData();
 
+    // Remove any error message immediately
+    const errorMsg = document.getElementById('error-message');
+    if (errorMsg) {
+        errorMsg.style.display = 'none';
+    }
+
     fetch('/api/predict', {
         method: 'POST',
         headers: {
@@ -326,28 +358,26 @@ function getRealTimePrediction() {
         },
         body: JSON.stringify(formData)
     })
-        .then(async response => {
-            const data = await response.json();
-            if (!response.ok) {
-                throw new Error(data.message || 'An error occurred');
-            }
-            return data;
-        })
+        .then(response => response.json())
         .then(data => {
-            if (data.status === 'error') {
-                showError(data.message);
-                return;
+            // Check if we got prediction data
+            if (!data || data.status === 'error' || !data.crop) {
+                return; // Silently fail for real-time updates
             }
+            // Got valid data, update UI
             updateUIWithPredictions(data);
         })
         .catch(error => {
-            console.error('Error getting prediction:', error);
-            showError(error.message || 'Failed to get prediction. Please try again.');
+            // Don't show errors for real-time updates
         });
 }
 
 // Submit form via AJAX
-function submitForm() {
+function submitForm(event) {
+    if (event) {
+        event.preventDefault(); // Prevent form from submitting normally
+    }
+
     const form = document.getElementById('crop-prediction-form');
     const submitBtn = form.querySelector('button[type="submit"]');
     const originalText = submitBtn.innerHTML;
@@ -355,6 +385,13 @@ function submitForm() {
     // Show loading state
     submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${((window.I18N && window.I18N.analyzing) || 'Analyzing...')}`;
     submitBtn.disabled = true;
+
+    // Clear any error messages
+    const errorMessage = document.getElementById('error-message');
+    if (errorMessage) {
+        errorMessage.style.display = 'none';
+        errorMessage.textContent = '';
+    }
 
     const formData = getFormData();
 
@@ -380,7 +417,6 @@ function submitForm() {
             scrollToResults();
         })
         .catch(error => {
-            console.error('Error:', error);
             showError(((window.I18N && window.I18N.error_processing_request) || 'An error occurred while processing your request.'));
         })
         .finally(() => {
@@ -405,12 +441,29 @@ function getFormData() {
 
 // Update UI with prediction results
 function updateUIWithPredictions(data) {
+    // First, ensure the results section exists
+    const resultsSection = document.getElementById('results');
+    if (!resultsSection) {
+        return;
+    }
+
+    // Remove any error message
+    const errorMessage = document.getElementById('error-message');
+    if (errorMessage) {
+        errorMessage.style.display = 'none';
+        errorMessage.textContent = '';
+    }
+
     // Reconstruct the data structure the other functions expect
     const primary = {
         crop: data.crop,
         confidence: data.confidence
     };
-    const alternatives = data.alternatives; // Use the correct key from the API
+    const alternatives = data.alternatives || []; // Ensure alternatives is always an array
+
+    // Make sure the results section is visible first
+    resultsSection.classList.add('visible');
+    resultsSection.style.display = 'block'; // Ensure it's not display: none
 
     // Combine primary and alternatives for the chart
     const all_predictions = [primary, ...alternatives];
@@ -426,8 +479,9 @@ function updateUIWithPredictions(data) {
     // Update chart with top 6 predictions
     updateSuitabilityChart(all_predictions);
 
-    // Show results section
-    document.getElementById('results').style.display = 'block';
+    // Show results section by toggling the 'visible' class
+    const resultsEl = document.getElementById('results');
+    if (resultsEl) resultsEl.classList.add('visible');
 }
 
 // Update primary recommendation display
@@ -455,6 +509,19 @@ function updatePrimaryRecommendation(prediction) {
 function updateAlternativeRecommendations(alternatives) {
     const container = document.getElementById('alternative-crops');
     container.innerHTML = '';
+
+    if (!alternatives || alternatives.length === 0) {
+        // Show a placeholder if no alternatives
+        container.innerHTML = `
+            <div class="alternative-crop">
+                <div class="alternative-crop-icon">🌱</div>
+                <h4>No alternatives</h4>
+                <div class="alternative-confidence confidence-low">0% Match</div>
+                <p>No alternative crops found</p>
+            </div>
+        `;
+        return;
+    }
 
     alternatives.forEach(alt => {
         const entry = findCropEntry(alt.crop) || {
@@ -557,8 +624,11 @@ function showError(message) {
     if (errorDiv) {
         errorDiv.textContent = message;
         errorDiv.style.display = 'block';
+        // Auto-hide after 5 seconds
         setTimeout(() => {
-            errorDiv.style.display = 'none';
+            if (errorDiv) {
+                errorDiv.style.display = 'none';
+            }
         }, 5000);
     }
 }
@@ -567,15 +637,25 @@ function showError(message) {
 function scrollToResults() {
     const resultsSection = document.getElementById('results');
     if (resultsSection) {
-        resultsSection.scrollIntoView({ behavior: 'smooth' });
+        // First make sure results are visible
+        resultsSection.classList.add('visible');
+        resultsSection.style.display = 'block';
+        // Then scroll to them
+        setTimeout(() => {
+            resultsSection.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        }, 100); // Small delay to ensure elements are rendered
     }
 }
 
 // Reset form function
 function resetForm() {
     document.getElementById('crop-prediction-form').reset();
-    document.getElementById('results').style.display = 'none';
-    
+    const resultsEl = document.getElementById('results');
+    if (resultsEl) resultsEl.classList.remove('visible');
+
     // Reset sliders to default values
     const defaultValues = {
         'nitrogen': 50,
@@ -584,7 +664,7 @@ function resetForm() {
         'temperature': 25,
         'humidity': 60,
         'ph': 6.5,
-        'rainfall': 1000  // Changed to better reflect annual rainfall in mm
+        'rainfall': 1000
     };
 
     Object.keys(defaultValues).forEach(id => {
@@ -607,12 +687,12 @@ function exportData() {
         parameters: formData,
         timestamp: new Date().toISOString()
     };
-    
+
     const dataStr = JSON.stringify(data, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-    
+    const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+
     const exportFileDefaultName = 'crop-analysis-' + new Date().toISOString().split('T')[0] + '.json';
-    
+
     const linkElement = document.createElement('a');
     linkElement.setAttribute('href', dataUri);
     linkElement.setAttribute('download', exportFileDefaultName);
@@ -623,7 +703,7 @@ function exportData() {
 function printResults() {
     const printContent = document.getElementById('results').innerHTML;
     const originalContent = document.body.innerHTML;
-    
+
     document.body.innerHTML = printContent;
     window.print();
     document.body.innerHTML = originalContent;
@@ -634,16 +714,16 @@ function printResults() {
 function shareResults() {
     const primaryCrop = document.getElementById('primary-crop-name').textContent;
     const confidence = document.getElementById('primary-confidence').textContent;
-    
+
     if (navigator.share) {
         navigator.share({
             title: (window.I18N && window.I18N.share_title) || 'Crop Recommendation',
             text: `FasalAI recommended ${primaryCrop} with ${confidence} ${(window.I18N && window.I18N.confidence_label) || 'confidence'}!`,
             url: window.location.href
-        }).catch(console.error);
+        }).catch(() => { });
     } else {
         // Fallback for browsers that don't support Web Share API
-        alert(((window.I18N && window.I18N.share_fallback) || 'Share this recommendation:') + ' ' + primaryCrop + ' ' + ((window.I18N && window.I18N.confidence_label) || 'confidence') + ' ' + confidence + '!');
+        showError(((window.I18N && window.I18N.share_fallback) || 'Share this recommendation:') + ' ' + primaryCrop + ' ' + ((window.I18N && window.I18N.confidence_label) || 'confidence') + ' ' + confidence + '!');
     }
 }
 
@@ -681,11 +761,14 @@ function setupChatbot() {
         addUserMessage(text);
         input.value = '';
         const typing = addBotMessage('<i class="fas fa-ellipsis-h fa-bounce"></i>');
+        const csrfTokenInput = form.querySelector('input[name="csrf_token"]');
+        const csrfToken = csrfTokenInput ? csrfTokenInput.value : '';
+
         try {
             const res = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: text })
+                body: JSON.stringify({ message: text, csrf_token: csrfToken })
             });
             const data = await res.json();
             typing.remove();

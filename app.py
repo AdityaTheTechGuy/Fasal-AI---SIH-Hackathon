@@ -1,5 +1,4 @@
 from dotenv import load_dotenv, find_dotenv
-
 load_dotenv(find_dotenv())
 
 import os
@@ -7,29 +6,41 @@ import pickle
 import numpy as np
 import pandas as pd
 import io
+import logging
+import uuid
 from flask import Flask, request, render_template, jsonify, session, redirect, url_for, send_file
-from flask_babel import Babel, get_locale
 from gtts import gTTS
 from data_aggregator import get_live_data, validate_coordinates
 
-jh_district_data = pd.read_csv("jh_district_npk.csv")
-
-def get_district_npk(district_name):
-    name_norm = str(district_name).strip().lower()
-    jh_district_data['district_norm'] = jh_district_data['district'].str.strip().str.lower()
-    row = jh_district_data[jh_district_data['district_norm'] == name_norm]
-
-    if not row.empty:
-        return {
-            "N": float(row.iloc[0]["N"]),
-            "P": float(row.iloc[0]["P"]),
-            "K": float(row.iloc[0]["K"]),
-            "ph": float(row.iloc[0]["ph"])
-        }
-    return None
 
 # Import numpy at the top level
 import numpy as np
+
+# Crop information database
+CROP_INFO = {
+    'Rice': {'season': 'Kharif (June-November)', 'water_req': 'High (1200-2500mm)', 'soil_type': 'Clay loam, well-drained', 'tips': 'Ensure proper water management and pest control.'},
+    'Maize': {'season': 'Kharif/Rabi (April-July, October-January)', 'water_req': 'Medium (500-800mm)', 'soil_type': 'Well-drained loamy soil', 'tips': 'Apply balanced fertilizers and control stem borer.'},
+    'Chickpea': {'season': 'Rabi (October-April)', 'water_req': 'Low (300-400mm)', 'soil_type': 'Well-drained, neutral pH', 'tips': 'Drought tolerant crop, avoid waterlogging.'},
+    'Cotton': {'season': 'Kharif (May-November)', 'water_req': 'Medium (700-1200mm)', 'soil_type': 'Deep, well-drained black soil', 'tips': 'Monitor for bollworm attacks and ensure adequate potash.'},
+    'Apple': {'season': 'Perennial (Harvest: September-November)', 'water_req': 'Medium (1000-1200mm)', 'soil_type': 'Well-drained, slightly acidic', 'tips': 'Regular pruning and scab disease control needed.'},
+    'Banana': {'season': 'Year-round planting', 'water_req': 'High (1500-1800mm)', 'soil_type': 'Rich, well-drained loamy soil', 'tips': 'High potassium requirement, protect from strong winds.'},
+    'Coffee': {'season': 'Perennial (Harvest: December-February)', 'water_req': 'Medium (1500-2000mm)', 'soil_type': 'Well-drained, slightly acidic', 'tips': 'Shade-grown crop, control berry borer and leaf rust.'},
+    'Kidneybeans': {'season': 'Rabi (October-March)', 'water_req': 'Medium (400-500mm)', 'soil_type': 'Well-drained loamy soil', 'tips': 'Avoid waterlogging and ensure proper nitrogen fixation.'},
+    'Pigeonpeas': {'season': 'Kharif (June-December)', 'water_req': 'Medium (600-650mm)', 'soil_type': 'Well-drained sandy loam', 'tips': 'Drought tolerant, good for intercropping systems.'},
+    'Mothbeans': {'season': 'Kharif (July-October)', 'water_req': 'Low (300-400mm)', 'soil_type': 'Sandy, drought-prone areas', 'tips': 'Highly drought tolerant, suitable for arid regions.'},
+    'Mungbean': {'season': 'Kharif/Summer (March-June, July-October)', 'water_req': 'Medium (400-500mm)', 'soil_type': 'Well-drained sandy loam', 'tips': 'Short duration crop, good for crop rotation.'},
+    'Blackgram': {'season': 'Kharif/Rabi (June-September, October-January)', 'water_req': 'Medium (400-500mm)', 'soil_type': 'Well-drained loamy soil', 'tips': 'Sensitive to waterlogging, ensure good drainage.'},
+    'Lentil': {'season': 'Rabi (October-April)', 'water_req': 'Low (300-400mm)', 'soil_type': 'Well-drained sandy loam', 'tips': 'Cold tolerant, avoid excessive moisture during flowering.'},
+    'Pomegranate': {'season': 'Year-round (Peak: October-February)', 'water_req': 'Medium (500-700mm)', 'soil_type': 'Well-drained, slightly alkaline', 'tips': 'Drought tolerant once established, prune regularly.'},
+    'Mango': {'season': 'Perennial (Harvest: April-July)', 'water_req': 'Medium (750-1200mm)', 'soil_type': 'Well-drained, deep soil', 'tips': 'Avoid waterlogging during flowering, control fruit fly.'},
+    'Grapes': {'season': 'Perennial (Harvest: February-April)', 'water_req': 'Medium (500-700mm)', 'soil_type': 'Well-drained, slightly alkaline', 'tips': 'Requires pruning and trellising, control powdery mildew.'},
+    'Watermelon': {'season': 'Summer (February-May)', 'water_req': 'Medium (400-600mm)', 'soil_type': 'Sandy loam, well-drained', 'tips': 'Requires warm weather, control fruit fly and aphids.'},
+    'Muskmelon': {'season': 'Summer (February-May)', 'water_req': 'Medium (300-500mm)', 'soil_type': 'Sandy loam, well-drained', 'tips': 'Warm season crop, ensure adequate potash supply.'},
+    'Orange': {'season': 'Perennial (Harvest: December-February)', 'water_req': 'Medium (1000-1200mm)', 'soil_type': 'Well-drained, slightly acidic', 'tips': 'Regular irrigation needed, control citrus canker.'},
+    'Papaya': {'season': 'Year-round planting', 'water_req': 'High (1200-1500mm)', 'soil_type': 'Well-drained, rich organic matter', 'tips': 'Avoid waterlogging, control papaya ring spot virus.'},
+    'Coconut': {'season': 'Year-round planting', 'water_req': 'High (1500-2000mm)', 'soil_type': 'Coastal sandy soil', 'tips': 'High potash requirement, control rhinoceros beetle.'},
+    'Jute': {'season': 'Kharif (April-August)', 'water_req': 'High (1000-1500mm)', 'soil_type': 'Alluvial soil with high moisture', 'tips': 'Requires high humidity, harvest at proper maturity.'}
+}
 
 # --- Updated Confidence display helper for better sensitivity ---
 def display_confidence_topk(probabilities, k=3, temperature=1.0):
@@ -66,7 +77,10 @@ def display_confidence_topk(probabilities, k=3, temperature=1.0):
     return round(primary_disp, 1), np.round(disp * 100.0, 1)
 
 # --- Case-safe crop info lookup (returns (info_dict, canonical_name)) ---
-def get_crop_info_safe(name: str):
+def findCropEntry(name: str):
+    """
+    Finds a crop entry in the CROP_INFO database with case-insensitive matching.
+    """
     n = str(name).strip().lower()
     for key, info in CROP_INFO.items():
         if key.lower() == n:
@@ -81,11 +95,7 @@ def get_crop_info_safe(name: str):
     }, name
 
 app = Flask(__name__)
-app.config['BABEL_DEFAULT_LOCALE'] = os.environ.get('BABEL_DEFAULT_LOCALE', 'en')
-app.config['BABEL_TRANSLATION_DIRECTORIES'] = 'translations'
-
 # Use proper secret key handling
-import logging
 logging.getLogger('data_aggregator').warning("OWM key visibility check: %s", bool(os.getenv("OWM_API_KEY")))
 
 app.secret_key = os.environ.get('FLASK_SECRET_KEY')
@@ -95,22 +105,39 @@ if not app.secret_key:
     else:
         raise ValueError("No FLASK_SECRET_KEY set for production environment")
 
-babel = Babel(app)
-LANGUAGES = {'en': 'English', 'hi': 'हिंदी', 'gu': 'ગુજરાતી', 'bn': 'বাংলা', 'or': 'ଓଡିଆ', 'bho': 'भोजपुरी'}
 
-@babel.localeselector
-def get_user_locale():
-    return session.get('language', request.accept_languages.best_match(LANGUAGES.keys()))
+LANGUAGES = {
+    'en': 'English',
+    'hi': 'हिंदी',
+    'gu': 'ગુજરાતી',
+    'bn': 'বাংলা',
+    'or': 'ଓଡିଆ',
+    'bho': 'भोजपुरी'
+}
+
+def get_locale():
+    return 'en'  # Default to English, Google Translate handles translations
 
 @app.context_processor
-def inject_locale():
-    return dict(get_locale=get_locale)
+def inject_helpers():
+    # Inject helpers into the template context
+    if '_csrf_token' not in session:
+        session['_csrf_token'] = str(uuid.uuid4())
+    return dict(
+        get_locale=get_locale,
+        findCropEntry=findCropEntry,
+        csrf_token=session['_csrf_token']
+    )
 
 @app.route('/change-lang/<lang>')
 def change_language(lang):
     if lang in LANGUAGES:
-        session['language'] = lang
-    return redirect(url_for('home'))
+        session['lang'] = lang
+        session.modified = True
+    else:
+        session['lang'] = 'en'
+        session.modified = True
+    return redirect(request.referrer or url_for('home'))
 
 @app.route('/speak/<text>')
 def text_to_speech(text):
@@ -125,8 +152,11 @@ def text_to_speech(text):
 EXPECTED_FEATURES = ['N', 'P', 'K', 'temperature', 'humidity', 'ph', 'rainfall']
 
 # Load model with enhanced error handling and metadata support
+model = None
+model_data = None
 try:
-    with open('crop_recommendation_model.pkl', 'rb') as f:
+    model_path = os.path.join(os.path.dirname(__file__), 'crop_recommendation_model.pkl')
+    with open(model_path, 'rb') as f:
         model_data = pickle.load(f)
 
     # Check if it's the new enhanced model format with metadata
@@ -141,11 +171,6 @@ try:
         print(f"✅ Features: {feature_names}")
         print(f"✅ Available crops: {len(crop_labels)}")
 
-        if feature_importance:
-            print("✅ Feature importance loaded:")
-            for feature, importance in sorted(feature_importance.items(), 
-                                            key=lambda x: x[1], reverse=True):
-                print(f"   {feature}: {importance:.4f}")
     else:
         # Legacy model format
         print("⚠️  Loading legacy model format...")
@@ -184,48 +209,32 @@ except FileNotFoundError:
     if hasattr(model, 'classes_'):
         print("✓ Using model's built-in classes")
 
-# Updated CROP_INFO with standardized case
-CROP_INFO = {
-    'Rice': {'season': 'Kharif (June-November)', 'water_req': 'High (1200-2500mm)', 'soil_type': 'Clay loam, well-drained', 'tips': 'Ensure proper water management and pest control.'},
-    'Maize': {'season': 'Kharif/Rabi', 'water_req': 'Medium (500-800mm)', 'soil_type': 'Well-drained loamy soil', 'tips': 'Apply balanced fertilizers and control stem borer.'},
-    'Chickpea': {'season': 'Rabi (October-April)', 'water_req': 'Low (300-400mm)', 'soil_type': 'Well-drained, neutral pH', 'tips': 'Drought tolerant crop, avoid waterlogging.'},
-    'Cotton': {'season': 'Kharif (May-November)', 'water_req': 'Medium (700-1200mm)', 'soil_type': 'Deep, well-drained black soil', 'tips': 'Monitor for bollworm attacks.'},
-    'Apple': {'season': 'Perennial (Harvest: Sep-Nov)', 'water_req': 'Medium (1000-1200mm)', 'soil_type': 'Well-drained, slightly acidic', 'tips': 'Requires cold winters for dormancy.'},
-    'Banana': {'season': 'Year-round planting', 'water_req': 'High (1500-1800mm)', 'soil_type': 'Rich, well-drained loamy soil', 'tips': 'High potassium requirement.'},
-    'Coffee': {'season': 'Perennial (Harvest: Dec-Feb)', 'water_req': 'Medium (1500-2000mm)', 'soil_type': 'Well-drained, slightly acidic', 'tips': 'Shade-grown crop. Control coffee berry borer.'},
-    'Kidneybeans': {'season': 'Rabi (October-March)', 'water_req': 'Medium (400-500mm)', 'soil_type': 'Well-drained loamy soil', 'tips': 'Avoid waterlogging and ensure proper nitrogen fixation.'},
-    'Pigeonpeas': {'season': 'Kharif (June-December)', 'water_req': 'Medium (600-650mm)', 'soil_type': 'Well-drained sandy loam', 'tips': 'Drought tolerant, good for intercropping systems.'},
-    'Mothbeans': {'season': 'Kharif (July-October)', 'water_req': 'Low (300-400mm)', 'soil_type': 'Sandy, drought-prone areas', 'tips': 'Highly drought tolerant, suitable for arid regions.'},
-    'Mungbean': {'season': 'Kharif/Summer (March-June, July-October)', 'water_req': 'Medium (400-500mm)', 'soil_type': 'Well-drained sandy loam', 'tips': 'Short duration crop, good for crop rotation.'},
-    'Blackgram': {'season': 'Kharif/Rabi (June-September, October-January)', 'water_req': 'Medium (400-500mm)', 'soil_type': 'Well-drained loamy soil', 'tips': 'Sensitive to waterlogging, ensure good drainage.'},
-    'Lentil': {'season': 'Rabi (October-April)', 'water_req': 'Low (300-400mm)', 'soil_type': 'Well-drained sandy loam', 'tips': 'Cold tolerant, avoid excessive moisture during flowering.'},
-    'Pomegranate': {'season': 'Year-round (Peak: October-February)', 'water_req': 'Medium (500-700mm)', 'soil_type': 'Well-drained, slightly alkaline', 'tips': 'Drought tolerant once established, prune regularly.'},
-    'Mango': {'season': 'Perennial (Harvest: April-July)', 'water_req': 'Medium (750-1200mm)', 'soil_type': 'Well-drained, deep soil', 'tips': 'Avoid waterlogging during flowering, control fruit fly.'},
-    'Grapes': {'season': 'Perennial (Harvest: February-April)', 'water_req': 'Medium (500-700mm)', 'soil_type': 'Well-drained, slightly alkaline', 'tips': 'Requires pruning and trellising, control powdery mildew.'},
-    'Watermelon': {'season': 'Summer (February-May)', 'water_req': 'Medium (400-600mm)', 'soil_type': 'Sandy loam, well-drained', 'tips': 'Requires warm weather, control fruit fly and aphids.'},
-    'Muskmelon': {'season': 'Summer (February-May)', 'water_req': 'Medium (300-500mm)', 'soil_type': 'Sandy loam, well-drained', 'tips': 'Warm season crop, ensure adequate potash supply.'},
-    'Orange': {'season': 'Perennial (Harvest: December-February)', 'water_req': 'Medium (1000-1200mm)', 'soil_type': 'Well-drained, slightly acidic', 'tips': 'Regular irrigation needed, control citrus canker.'},
-    'Papaya': {'season': 'Year-round planting', 'water_req': 'High (1200-1500mm)', 'soil_type': 'Well-drained, rich organic matter', 'tips': 'Avoid waterlogging, control papaya ring spot virus.'},
-    'Coconut': {'season': 'Year-round planting', 'water_req': 'High (1500-2000mm)', 'soil_type': 'Coastal sandy soil', 'tips': 'High potash requirement, control rhinoceros beetle.'},
-    'Jute': {'season': 'Kharif (April-August)', 'water_req': 'High (1000-1500mm)', 'soil_type': 'Alluvial soil with high moisture', 'tips': 'Requires high humidity, harvest at proper maturity.'}
-}
-
 @app.route('/')
 def home():
+    # Ensure CSRF token exists for the session
+    if '_csrf_token' not in session:
+        session['_csrf_token'] = str(uuid.uuid4())
     return render_template('index.html',
                          languages=LANGUAGES,
                          prediction=None,
                          confidence=None,
                          crop_info=None,
                          input_values=None,
-                         alternative_predictions=None)
+                         alternative_predictions=None,
+                         confidence_label='Confidence Level',
+                         error=None)
 
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
+        # CSRF Token Validation
+        submitted_token = request.form.get('csrf_token')
+        if not submitted_token or submitted_token != session.get('_csrf_token'):
+            return render_template('index.html', error="Invalid form submission. Please try again.", languages=LANGUAGES)
+
         if model is None:
-            return render_template('index.html', 
-                                 error="Model not loaded. Please train the model using train_model_updated.py", 
+            return render_template('index.html',
+                                 error="Model not loaded. Please train the model using train_model_updated.py",
                                  languages=LANGUAGES)
 
         input_values_form = request.form
@@ -240,22 +249,22 @@ def predict():
 
         # Input validation
         if not (0 <= N <= 200):
-            return render_template('index.html', error="Nitrogen must be between 0-200 kg/ha.", 
+            return render_template('index.html', error="Nitrogen must be between 0-200 kg/ha.",
                                  languages=LANGUAGES, input_values=input_values_form)
         if not (0 <= P <= 150):
-            return render_template('index.html', error="Phosphorus must be between 0-150 kg/ha.", 
+            return render_template('index.html', error="Phosphorus must be between 0-150 kg/ha.",
                                  languages=LANGUAGES, input_values=input_values_form)
         if not (0 <= K <= 300):
-            return render_template('index.html', error="Potassium must be between 0-300 kg/ha.", 
+            return render_template('index.html', error="Potassium must be between 0-300 kg/ha.",
                                  languages=LANGUAGES, input_values=input_values_form)
         if not (5 <= temperature <= 45):
-            return render_template('index.html', error="Temperature must be between 5-45°C.", 
+            return render_template('index.html', error="Temperature must be between 5-45°C.",
                                  languages=LANGUAGES, input_values=input_values_form)
         if not (10 <= humidity <= 100):
-            return render_template('index.html', error="Humidity must be between 10-100%.", 
+            return render_template('index.html', error="Humidity must be between 10-100%.",
                                  languages=LANGUAGES, input_values=input_values_form)
         if not (3 <= ph <= 10):
-            return render_template('index.html', error="pH must be between 3-10.", 
+            return render_template('index.html', error="pH must be between 3-10.",
                                  languages=LANGUAGES, input_values=input_values_form)
         if not (200 <= rainfall <= 3000):
             return render_template('index.html',
@@ -297,8 +306,11 @@ def predict():
         primary_prediction = all_predictions[0]['crop']
         primary_confidence = all_predictions[0]['confidence']  # now relative % (top-k)
 
-        crop_info, _ = get_crop_info_safe(primary_prediction)
+        crop_info, _ = findCropEntry(primary_prediction)
         alternative_predictions = all_predictions[1:4]
+
+        # Regenerate CSRF token after successful processing
+        session['_csrf_token'] = str(uuid.uuid4())
 
         return render_template('index.html',
                              prediction=primary_prediction,
@@ -406,6 +418,12 @@ def api_predict():
 def api_chat():
     try:
         data = request.get_json(silent=True) or {}
+        
+        # CSRF Token Validation for AJAX
+        submitted_token = data.get('csrf_token')
+        if not submitted_token or submitted_token != session.get('_csrf_token'):
+            return jsonify({'status': 'error', 'message': 'CSRF validation failed.'}), 400
+
         user_message = (data.get('message') or '').strip()
         history = data.get('history') or []  # optional: list of {role, content}
 
@@ -490,21 +508,8 @@ def predict_live():
         if not validate_coordinates(lat, lon):
             return jsonify({'status': 'error', 'message': 'Invalid coordinates.'}), 400
 
-        # Fetch live data (District CSV + OWM + NASA)
+        # Fetch live data (OWM + NASA)
         live = get_live_data(lat, lon) or {}
-
-        # --- Ensure Jharkhand district CSV values are applied when available ---
-        dist_name = (live.get('district') or '').strip()
-        if dist_name:
-            npk_from_csv = get_district_npk(dist_name)
-            if npk_from_csv:
-                # overlay N/P/K/pH from your CSV
-                live.update(npk_from_csv)
-                # mark the source so provenance is correct later
-                live['soil_source'] = 'district'
-            else:
-                # make the source explicit when we have nothing
-                live.setdefault('soil_source', 'none')
 
         # Validate and convert all required values
         vals = {}
@@ -564,8 +569,8 @@ def predict_live():
             if len(alts) == 2:
                 break
 
-        # --- FIX: Look up the crop info using the helper function ---
-        crop_info, _ = get_crop_info_safe(crop)
+        # Look up the crop info using the helper function
+        crop_info, _ = findCropEntry(crop)
 
         return jsonify({
             'status': 'success',
@@ -582,7 +587,6 @@ def predict_live():
                 'longitude': lon,
                 'district': live.get('district')
             },
-            # --- FIX: Pass the populated crop_info object ---
             'crop_info': crop_info
         })
 

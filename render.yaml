@@ -1,5 +1,11 @@
-services:
-  - type: web
+services    envVars:
+      - key: OWM_API_KEY
+        sync: false       # set in dashboard (don't commit your secret)
+      - key: FLASK_SECRET_KEY
+        generateValue: true
+      - key: GEMINI_API_KEY
+        sync: false       # set in dashboard
+    autoDeploy: trueype: web
     name: fasal-ai
     env: python
     plan: free            # or 'starter' / 'standard' / etc.

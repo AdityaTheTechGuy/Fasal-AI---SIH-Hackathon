@@ -49,14 +49,7 @@ if %errorlevel% neq 0 (
 echo [SUCCESS] All packages are installed.
 
 echo.
-echo [INFO] Compiling translation files...
-:: Use the pybabel executable directly from the venv's Scripts folder
-.\%VENV_DIR%\Scripts\pybabel compile -d translations
-if %errorlevel% neq 0 (
-    echo [WARNING] Could not compile translations. This is okay if no translation files exist yet.
-) else (
-    echo [SUCCESS] Translations compiled.
-)
+echo [INFO] Skipping Babel translation compilation (using Google Translate widget client-side)
 
 echo.
 echo =============================================================

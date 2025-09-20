@@ -1,4 +1,3 @@
-
 # enhanced_train_model.py - Training with Large Enhanced Dataset
 
 import pandas as pd
@@ -15,12 +14,12 @@ warnings.filterwarnings('ignore')
 
 # --- ENHANCED TRAINING CONFIGURATION ---
 # Dataset selection - will try enhanced dataset first, fall back to original
-ENHANCED_DATASET = 'enhanced_crop_dataset.csv'
-ORIGINAL_DATASET = 'crop_recommendation_dataset.csv'
-MODEL_OUTPUT = 'enhanced_crop_model.pkl'
+ENHANCED_DATASET = 'crop_recommendation_dataset.csv' # Corrected to match the new generator output
+ORIGINAL_DATASET = 'crop_recommendationc_dataset.csv' # Kept for fallback, typo corrected if needed
+MODEL_OUTPUT = 'crop_recommendation_model.pkl'
 ENABLE_HYPERPARAMETER_TUNING = True
 USE_CROSS_VALIDATION = True
-COMPARE_ALGORITHMS = True
+COMPARE_ALGORITHMS = False
 TEST_SENSITIVITY = True
 # ---------------------------------------
 
@@ -28,7 +27,7 @@ def load_and_prepare_data():
     """Load dataset with fallback options"""
     print("Step 1: Loading and preparing data...")
 
-    # Try to load enhanced dataset first
+    # Try to load enhanced dataset first, then fall back
     if os.path.exists(ENHANCED_DATASET):
         print(f"📊 Loading enhanced dataset: {ENHANCED_DATASET}")
         df = pd.read_csv(ENHANCED_DATASET)
@@ -38,7 +37,7 @@ def load_and_prepare_data():
         df = pd.read_csv(ORIGINAL_DATASET)
         dataset_type = "original"
     else:
-        raise FileNotFoundError("No dataset found. Please generate enhanced_crop_dataset.csv first.")
+        raise FileNotFoundError(f"No dataset found. Please generate '{ENHANCED_DATASET}' first.")
 
     print(f"Dataset loaded: {df.shape[0]} rows, {df.shape[1]} columns")
 
@@ -76,15 +75,15 @@ def compare_algorithms(X_train, X_test, y_train, y_test):
 
     algorithms = {
         'Random Forest (Small)': RandomForestClassifier(
-            n_estimators=50, max_depth=15, random_state=42, 
+            n_estimators=50, max_depth=15, random_state=42,
             class_weight='balanced', n_jobs=-1
         ),
         'Random Forest (Medium)': RandomForestClassifier(
-            n_estimators=100, max_depth=20, random_state=42, 
+            n_estimators=100, max_depth=20, random_state=42,
             class_weight='balanced', n_jobs=-1
         ),
         'Gradient Boosting': GradientBoostingClassifier(
-            n_estimators=100, max_depth=6, learning_rate=0.1, 
+            n_estimators=100, max_depth=6, learning_rate=0.1,
             random_state=42
         )
     }
@@ -185,7 +184,6 @@ def hyperparameter_tuning(model, X_train, y_train, model_name):
     print(f"\n✅ Hyperparameter tuning complete!")
     print(f"   Best parameters: {search.best_params_}")
     print(f"   Best CV score: {search.best_score_:.4f}")
-    print(f"   Improvement: {search.best_score_ - search.estimator.score(X_train, y_train):.4f}")
 
     return search.best_estimator_
 
@@ -253,8 +251,8 @@ def test_model_sensitivity(model, X_test, y_test):
                 print(f"   ~ {param} {direction} by {abs(variation * multiplier)}: confidence Δ{confidence_change:+.3f}")
 
     # Calculate overall sensitivity score
-    prediction_changes = sum(1 for result in sensitivity_results['parameter_sensitivity'].values() 
-                           if result['prediction_changed'])
+    prediction_changes = sum(1 for result in sensitivity_results['parameter_sensitivity'].values()
+                             if result['prediction_changed'])
     total_tests = len(sensitivity_results['parameter_sensitivity'])
     sensitivity_score = prediction_changes / total_tests
 
@@ -343,12 +341,15 @@ def main():
         else:
             # Use default Random Forest
             best_model = RandomForestClassifier(
-                n_estimators=75, max_depth=20, random_state=42, 
+                n_estimators=75, max_depth=20, random_state=42,
                 class_weight='balanced', n_jobs=-1
             )
             best_name = "Random Forest (Default)"
             algorithm_results = {}
+            print(f"\n🔬 Training {best_name}...")
             best_model.fit(X_train, y_train)
+            print("✅ Default model training complete.")
+
 
         # Step 3: Hyperparameter tuning
         tuned_model = hyperparameter_tuning(best_model, X_train, y_train, best_name)
@@ -359,6 +360,10 @@ def main():
 
         print(f"\n🎯 Final Model Performance:")
         print(f"   Test Accuracy: {final_accuracy:.4f}")
+        # ADD THESE TWO LINES
+        print("\nDetailed Classification Report:")
+        print(classification_report(y_test, final_predictions, target_names=sorted(y.unique())))
+        # END OF ADDITION
 
         # Step 4: Test sensitivity
         sensitivity_results = test_model_sensitivity(tuned_model, X_test, y_test)
@@ -375,7 +380,7 @@ def main():
         print(f"   Test accuracy: {final_accuracy:.4f}")
 
         if sensitivity_results.get('parameter_sensitivity'):
-            sensitivity_score = sum(1 for r in sensitivity_results['parameter_sensitivity'].values() 
+            sensitivity_score = sum(1 for r in sensitivity_results['parameter_sensitivity'].values()
                                   if r['prediction_changed']) / len(sensitivity_results['parameter_sensitivity'])
             print(f"   Sensitivity score: {sensitivity_score:.3f}")
 
@@ -389,3 +394,4 @@ def main():
 
 if __name__ == "__main__":
     model_metadata = main()
+

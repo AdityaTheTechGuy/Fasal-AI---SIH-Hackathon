@@ -84,17 +84,8 @@ python app.py
 Once the server is running, you can access the application in your web browser at https://www.google.com/search?q=http://127.0.0.1:5000.
 
 🌐 Internationalization (i18n)
-The application uses the Flask-Babel library for translations. All translatable text is located in the .po files within the translations directory.
-
-To add or edit translations:
-
-Extract text: Run pybabel extract -F babel.cfg -o messages.pot . to find any new text in the templates.
-
-Update source files: Run pybabel update -i messages.pot -d translations to update the .po files for each language.
-
-Translate: Edit the msgstr fields in each .po file (e.g., translations/hi/LC_MESSAGES/messages.po).
-
-Compile: Run pybabel compile -d translations to compile the changes. The start.bat script runs this automatically.
+This project uses the Google Translate widget in the frontend to provide client-side translations. There is no server-side Babel/Flask-Babel compilation step required.
+If you want to provide curated server-side translations in the future, the repository previously included Flask-Babel tooling that can be reintroduced.
 
 📂 Project Structure
 Fasal AI/
@@ -103,13 +94,9 @@ Fasal AI/
 │   └── style.css
 ├── templates/              # HTML templates
 │   └── index.html
-├── translations/           # Translation files for each language
-│   └── hi/LC_MESSAGES/
-│       ├── messages.po
-│       └── messages.mo
 ├── .gitignore              # Files for Git to ignore (like the venv)
 ├── app.py                  # The main Flask application logic
-├── babel.cfg               # Configuration for Flask-Babel
+├── (client-side translations handled by Google Translate)
 ├── crop_recommendation_model.pkl # The trained machine learning model
 ├── label_encoder.pkl       # The label encoder for the model
 ├── requirements.txt        # List of Python packages to install
